@@ -2,6 +2,7 @@
 #define POL_H
 
 #include <ArduinoEigenDense.h>
+#include <vector>
 #include "Params.h"
 
 class POL {
@@ -84,15 +85,16 @@ public:
     B << 1.0f, -1.0f,
       -1.0f / R, 1.0f / R,
       -L / R, -L / R;
-
+    //部件坐标系位置
     p_vecs.col(0) << 0.0f, 0.0f, 0.0f;
     p_vecs.col(1) << -0.064951905284f, -0.086f, 0.0375f;
     p_vecs.col(2) << -0.064951905284f, 0.086f, 0.0375f;
     p_vecs.col(3) << 0.0f, -0.081f, 0.0f;
     p_vecs.col(4) << 0.0f, 0.081f, 0.0f;
+  //初始化旋转矩阵容器
     R_matrices.resize(7);
     R_matrices[0] = Eigen::Matrix3f::Identity();
-
+  //保存各部件局部质心
     c_vecs.col(0) = properties_.CoM_Body;
     c_vecs.col(1) = properties_.CoM_TAR;
     c_vecs.col(2) = properties_.CoM_TAL;
@@ -100,12 +102,12 @@ public:
     c_vecs.col(4) = properties_.CoM_TPL;
     c_vecs.col(5) = properties_.CoM_CR;
     c_vecs.col(6) = properties_.CoM_CL;
-
+  //保存质量
     m_vecs << properties_.m_Body, properties_.m_TAR, properties_.m_TAL, properties_.m_TPR, properties_.m_TPL, properties_.m_CR, properties_.m_CL;
     m_B = m_vecs.sum();
     m_RW = properties_.m_RW;
     m_LW = properties_.m_LW;
-
+  //保存局部惯量
     IG_matrices.resize(7);
     IG_matrices[0] = properties_.I_Body;
     IG_matrices[1] = properties_.I_TAR;

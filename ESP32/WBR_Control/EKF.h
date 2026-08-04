@@ -7,18 +7,18 @@
 
 class EKF {
 private:
-  Eigen::Matrix<float, 4, 4> P;       // 단위 행렬
-  Eigen::Matrix<float, 4, 4> P_pred;  // 단위 행렬
-  const Eigen::DiagonalMatrix<float, 8> R_cov;
-  const Eigen::DiagonalMatrix<float, 4> Q_cov;
-  Eigen::Matrix<float, 4, 4> F_mat;  // Jacobian of Dynamic model
-  Eigen::Matrix<float, 8, 4> H;  // Jacobian of Observation model
-  Eigen::Matrix<float, 4, 8> K_mat;  // Kalman Gain
+  Eigen::Matrix<float, 4, 4> P;       // 状态协方差，表示当前状态估计的不确定性
+  Eigen::Matrix<float, 4, 4> P_pred;  // 动力学预测后，传感器修正前的不确定性
+  const Eigen::DiagonalMatrix<float, 8> R_cov;//测量噪声，越大月不可靠
+  const Eigen::DiagonalMatrix<float, 4> Q_cov;//过程噪声，描述动力学模型自身的不确定性，越大月不可靠
+  Eigen::Matrix<float, 4, 4> F_mat;  // 状态转移雅可比，描述当前状态误差如何传播到下一时刻
+  Eigen::Matrix<float, 8, 4> H;  // 观测雅可比，描述四个状态变化时，八个传感器观测值分别变化多少
+  Eigen::Matrix<float, 4, 8> K_mat;  // 卡尔曼增益，决定模型预测和传感器观测值的权重，越大越信任传感器观测值
 
   POL &Pol_ref;
 
-  Eigen::Matrix<float, 4, 1> x, x_pred;  // state
-  Eigen::Matrix<float, 8, 1> z, h_obs;   // measurement
+  Eigen::Matrix<float, 4, 1> x, x_pred;  // x：修正后的状态，x_pred：动力学模型预测的状态
+  Eigen::Matrix<float, 8, 1> z, h_obs;   // z：传感器实际测量值，h_obs：根据预测状态计算出的理论传感器值
 
 public:
   EKF(POL &Pol_)
@@ -124,11 +124,14 @@ public:
   }
 
   bool estimate_state(Eigen::Matrix<float, 4, 1> &x_, const Eigen::Matrix<float, 8, 1> &z_) {
+    //设置上一次状态和本次传感器测量
     setState(x_);
     setMeasurement(z_);
+    //执行模型预测
     if (!predict()) {
       return false;
     }
+    //使用传感器修正预测结果
     update();
     x_ = x;
     return true;

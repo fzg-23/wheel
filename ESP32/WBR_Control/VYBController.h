@@ -3,6 +3,7 @@
 
 #include <Arduino.h>
 #include <ArduinoEigenDense.h>
+#include <vector>
 #include "Params.h"
 #include "MGServo.h"
 
@@ -15,20 +16,21 @@ private:
   MGServo& ServoRW;  ///< 우측 휠 서보
   MGServo& ServoLW;  ///< 좌측 휠 서보
 
-  std::vector<Eigen::Matrix<float, 2, 4>> Ks;  ///< LQR 게인 행렬들의 벡터
-  Eigen::Matrix<float, 2, 4> K;                ///< 현재 사용 중인 LQR 게인
-  Eigen::Matrix<float, 2, 1> u;                ///< 제어 입력 벡터
+  std::vector<Eigen::Matrix<float, 2, 4>> Ks;  ///增益表
+  Eigen::Matrix<float, 2, 4> K;                ///当前选中增益
+  Eigen::Matrix<float, 2, 1> u;                ///输出
 
-  float iq_factor;        ///< 전류 변환 계수 (A/LSB)
-  float torque_constant;  ///< 토크 상수 (Nm/A)
+  float iq_factor;        ///电流与电机命令之间转化系数
+  float torque_constant;  ///电流与扭矩之间转化系数
+  //左右轮实测换算系数(一个电机命令产生多少扭矩)
   float LW_factor = 0.001043224f;
   float RW_factor = 0.000857902f;
 
   float AngleFixRate = 0.1;
 
-  float saturation;  ///< input saturation
-  Eigen::Matrix<float, 2, 1> saturation_vec;
-  const int RW_bias = 12;  ///< 우측 휠 모터의 바이어스 값
+  float saturation;  ///输出限幅
+  Eigen::Matrix<float, 2, 1> saturation_vec;//限幅矩阵
+  const int RW_bias = 12;  ///死区补偿
 
 public:
   float theta_d;
@@ -46,9 +48,12 @@ public:
     saturation = iq_factor * torque_constant * MAX_TORQUE_COMMAND;
     // saturation_vec << MAX_TORQUE_COMMAND * RW_factor, MAX_TORQUE_COMMAND * LW_factor;
     saturation_vec << MAX_TORQUE, MAX_TORQUE;
+    //初始化限幅矩阵[MAX_TORQUE]
+    //             [MAX_TORQUE];
 
 
-    // LQR 게인 초기화 (하드코딩된 데이터 삽입)
+
+    // 加载LQR增益表
     Eigen::Matrix<float, 2, 4> mat;
     //////////////////////////////////////////////////////////
     mat << 1.35316904f, 0.14009245f, 0.23358589f, -0.12161902f,
@@ -121,6 +126,7 @@ public:
    * @brief 모터 속도 측정을 수행하여 측정 벡터에 반영
    * @param z 모터 속도 측정값을 저장할 벡터
    */
+  //读取左右电机速度，送入EKF
   void getMotorSpeedMeasurement(Eigen::Matrix<float, 8, 1>& z) {
     z(6) = ServoRW.getMotorSpeed() * M_PI / 180;
     z(7) = ServoLW.getMotorSpeed() * M_PI / 180;
@@ -130,6 +136,7 @@ public:
   * @brief 모터 Current 측정값 update
   * @param iq_vec 모터 current 측정값을 저장할 벡터
   */
+ //读取电机电流
   void getMotorCurrentMeasurement(Eigen::Matrix<float, 2, 1>& iq_vec) {
     iq_vec << ServoRW.getMotorIq(), ServoLW.getMotorIq();
   }
@@ -138,21 +145,22 @@ public:
    * @brief 현재 높이에 따라 LQR 게인 K를 계산
    * @param h 현재 높이 (m)
    */
+  //根据当前高度计算LQR增益K
   void computeGainK(const float h) {
-    float temp = (h - HEIGHT_MIN) / 0.01;  // 구간을 10mm당 하나씩 나눔
-    int idx = static_cast<int>(temp);      // 구간의 정수 인덱스 계산
+    float temp = (h - HEIGHT_MIN) / 0.01;  //高度间隔10mm
+    int idx = static_cast<int>(temp);      //把temp转化为整数
 
     if (idx >= 0 && idx < static_cast<int>(Ks.size()) - 1) {
-      // 보간 비율 계산
-      float ratio = temp - idx;  // 현재 위치가 구간 내에서 차지하는 비율
+      //如果高度处于增益表范围内，就在相邻两组之间插值
+      float ratio = temp - idx;  // 当前位置在区间内所占的比例
 
-      // 보간 수행
+      // 插值计算
       K = Ks.at(idx) * (1.0f - ratio) + Ks.at(idx + 1) * ratio;
     } else if (idx < 0) {
-      // h가 HEIGHT_MIN 이하일 경우 최소값 사용
+      // 使用第一组增益
       K = Ks.front();
     } else {
-      // h가 범위를 벗어날 경우 최대값 사용
+      // 使用最后一组增益
       K = Ks.back();
     }
   }
@@ -194,6 +202,7 @@ public:
   /**
    * @brief 계산된 제어 명령을 서보에 전송
    */
+    //发送平衡控制指令
   void sendControlCommand() {
     // float u_RW = u(0) / (iq_factor * torque_constant);
     // float u_LW = u(1) / (iq_factor * torque_constant);
@@ -226,7 +235,7 @@ public:
     ServoRW.sendTorqueControlCommand(static_cast<int16_t>(u_RW));
     ServoLW.sendTorqueControlCommand(static_cast<int16_t>(u_LW));
   }
-
+//请求读取电机状态
   void sendReadStateCommand() {
     ServoRW.sendCommandReadMotorState2();
     ServoLW.sendCommandReadMotorState2();

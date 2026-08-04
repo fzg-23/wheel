@@ -148,7 +148,7 @@ public:
         // 클라이언트에서 데이터를 받을 준비가 되었는지 확인
         if (client.available()) {
           String request = client.readStringUntil('\r');
-          client.clear();  // 클라이언트 버퍼 비우기
+          while (client.available()) client.read();  // 클라이언트 버퍼 비우기
 
           // 클라이언트 요청 처리 (CSV 파일 요청 시)
           if (request.indexOf("/logdata") != -1) {

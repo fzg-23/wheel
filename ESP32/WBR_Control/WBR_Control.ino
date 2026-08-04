@@ -1,3 +1,31 @@
+#ifndef MPU6050_STANDALONE_TEST
+#define MPU6050_STANDALONE_TEST 0
+#endif
+#ifndef WHEEL_MOTOR_STANDALONE_TEST
+#define WHEEL_MOTOR_STANDALONE_TEST 0
+#endif
+#ifndef WHEEL_MOTOR_SOURCE_HARDWARE_TEST
+#define WHEEL_MOTOR_SOURCE_HARDWARE_TEST 0
+#endif
+#ifndef HIP_SERVO_STANDALONE_TEST
+#define HIP_SERVO_STANDALONE_TEST 0
+#endif
+#ifndef HIP_SERVO_MPU6050_COMBINED_TEST
+#define HIP_SERVO_MPU6050_COMBINED_TEST 1
+#endif
+
+#if MPU6050_STANDALONE_TEST
+#include "testmpu.h"
+#elif WHEEL_MOTOR_SOURCE_HARDWARE_TEST
+#include "testMG0.h"
+#elif HIP_SERVO_MPU6050_COMBINED_TEST
+#include "test.h"
+#elif HIP_SERVO_STANDALONE_TEST
+#include "testHR.h"
+#elif WHEEL_MOTOR_STANDALONE_TEST
+#include "testMG.h"
+#else
+
 #include "Params.h"
 #include "Receiver.h"
 #include "HRController.h"
@@ -358,3 +386,5 @@ void serialPrintStates() {
   Serial.print(u(1), 6);
   Serial.print(" ");
 }
+
+#endif  // standalone test selection

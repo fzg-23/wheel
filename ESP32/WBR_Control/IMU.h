@@ -85,7 +85,7 @@ public:
     }
 
     // 14바이트 요청
-    Wire.requestFrom(0x68, 14, true);
+    Wire.requestFrom(static_cast<uint8_t>(0x68), static_cast<size_t>(14), true);
     if (Wire.available() < 14) {
       return false;  // 데이터 수신 실패
     }
