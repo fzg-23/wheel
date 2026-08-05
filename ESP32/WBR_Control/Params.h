@@ -14,17 +14,25 @@
 #define SERIAL_BAUDRATE 115200
 
 // 핀 번호 정의
-#define LH_PIN 13  // 왼쪽 서보 핀
-#define RH_PIN 21  // 오른쪽 서보 핀
+#define LU9685_SDA_PIN 8
+#define LU9685_SCL_PIN 9
+#define LU9685_ADDRESS 0x00
+#define LH_SERVO_CHANNEL 1
+#define RH_SERVO_CHANNEL 2
 
-#define SBUS_RX_PIN 15  // SBUS 수신 핀
+#define USE_SBUS_RECEIVER 0  // GPIO15/Serial2 is currently used by motor 2
+#define USE_WIFI_LOGGER 0     // Serial-control bring-up: do not block on Wi-Fi
+#define SBUS_RX_PIN 15       // Update before enabling SBUS
 
-#define RS485_DE_RE 1    // DE/RE 제어 핀
-#define RS485_TX_PIN 40  // DI (TX) 핀
-#define RS485_RX_PIN 42  // RO (RX) 핀
+#define RS485_DE_RE 1  // Only used by non-automatic-direction transceivers
+#define MOTOR1_RX_PIN 18
+#define MOTOR1_TX_PIN 17
+#define MOTOR2_RX_PIN 16
+#define MOTOR2_TX_PIN 15
+#define MOTOR_BAUDRATE 115200
 
-#define SDA_PIN 8   // SDA MPU6050 핀
-#define SCL_PIN 17  // SCL MPU6050 핀
+#define SDA_PIN 10  // SDA MPU6050 pin
+#define SCL_PIN 11  // SCL MPU6050 pin
 
 // 범위 설정 (height와 phi)
 const float HEIGHT_MIN = 0.07;  // 최소 높이 (m)

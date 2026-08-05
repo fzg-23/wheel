@@ -20,6 +20,7 @@ constexpr uint8_t READ_MOTOR_STATE2_COMMAND = 0x9C;
 class MGServo {
 private:
   HardwareSerial& RS485;
+  bool automaticDirection;
 
   uint8_t motorID;
   int8_t temperature;  // temperature (℃)
@@ -31,8 +32,10 @@ private:
 
 
 public:
-  MGServo(uint8_t motorID, HardwareSerial& RS485_ref)
-    : motorID(motorID), RS485(RS485_ref) {
+  MGServo(uint8_t motorID, HardwareSerial& RS485_ref,
+          bool automaticDirection_ = false)
+    : RS485(RS485_ref), automaticDirection(automaticDirection_),
+      motorID(motorID) {
     temperature = 0;
     encoder = 0;
     iq_raw = 0;
@@ -197,7 +200,7 @@ private:
 
     unsigned long startTime = micros();  // 타이머 시작
     while (RS485.available() < responseLength) {
-      if (micros() - startTime > 500) {
+      if (micros() - startTime > 5000) {
             Serial.println("[ERROR] Response timeout! No sufficient data received.");
             return false;  // 타임아웃 발생
         }
@@ -239,7 +242,7 @@ private:
 
   // RS485 모드 전환
   void toggleRS485Mode(uint8_t mode) const {
-    digitalWrite(RS485_DE_RE, mode);
+    if (!automaticDirection) digitalWrite(RS485_DE_RE, mode);
   }
 
   // 체크섬 계산

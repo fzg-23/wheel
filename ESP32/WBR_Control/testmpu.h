@@ -7,10 +7,10 @@
 namespace MPU6050Test {
 
 #ifndef MPU6050_SDA_PIN
-#define MPU6050_SDA_PIN 8
+#define MPU6050_SDA_PIN 10
 #endif
 #ifndef MPU6050_SCL_PIN
-#define MPU6050_SCL_PIN 17
+#define MPU6050_SCL_PIN 11
 #endif
 
 // Pins are supplied by the selected PlatformIO environment.
@@ -18,6 +18,8 @@ constexpr int I2C_SDA_PIN = MPU6050_SDA_PIN;
 constexpr int I2C_SCL_PIN = MPU6050_SCL_PIN;
 constexpr uint32_t I2C_FREQUENCY = 400000;
 constexpr uint32_t SAMPLE_INTERVAL_MS = 100;
+constexpr size_t CALIBRATION_SAMPLES = 1000;
+constexpr uint32_t CALIBRATION_INTERVAL_MS = 10;
 
 constexpr uint8_t ADDRESS_LOW = 0x68;
 constexpr uint8_t ADDRESS_HIGH = 0x69;
@@ -31,6 +33,7 @@ constexpr uint8_t REG_WHO_AM_I = 0x75;
 
 uint8_t mpuAddress = 0;
 uint32_t lastSampleMs = 0;
+bool continuousOutputEnabled = false;
 
 bool writeRegister(uint8_t reg, uint8_t value) {
   Wire.beginTransmission(mpuAddress);
@@ -104,6 +107,96 @@ void printMeasurement() {
                 gx, gy, gz, temperature);
 }
 
+void calibrateMPU6050() {
+  if (mpuAddress == 0) {
+    Serial.println("[ERROR] MPU6050 is not initialized");
+    return;
+  }
+
+  Serial.println("MPU calibration starts: keep the sensor completely still and level.");
+  Serial.printf("Collecting %u samples (about %lu seconds)...\n",
+                static_cast<unsigned>(CALIBRATION_SAMPLES),
+                static_cast<unsigned long>(
+                    CALIBRATION_SAMPLES * CALIBRATION_INTERVAL_MS / 1000));
+
+  int64_t accelSum[3] = {0, 0, 0};
+  int64_t gyroSum[3] = {0, 0, 0};
+  int64_t temperatureSum = 0;
+  size_t collected = 0;
+  size_t failed = 0;
+
+  while (collected < CALIBRATION_SAMPLES) {
+    const uint32_t sampleStart = millis();
+    uint8_t data[14];
+    if (readRegisters(REG_ACCEL_XOUT_H, data, sizeof(data))) {
+      accelSum[0] += combineBytes(data[0], data[1]);
+      accelSum[1] += combineBytes(data[2], data[3]);
+      accelSum[2] += combineBytes(data[4], data[5]);
+      temperatureSum += combineBytes(data[6], data[7]);
+      gyroSum[0] += combineBytes(data[8], data[9]);
+      gyroSum[1] += combineBytes(data[10], data[11]);
+      gyroSum[2] += combineBytes(data[12], data[13]);
+      ++collected;
+      if (collected % 100 == 0) {
+        Serial.printf("Calibration progress: %u/%u\n",
+                      static_cast<unsigned>(collected),
+                      static_cast<unsigned>(CALIBRATION_SAMPLES));
+      }
+    } else {
+      ++failed;
+      if (failed >= 100) {
+        Serial.println("[ERROR] Too many MPU6050 read failures; calibration aborted");
+        return;
+      }
+    }
+
+    const uint32_t elapsed = millis() - sampleStart;
+    if (elapsed < CALIBRATION_INTERVAL_MS) {
+      delay(CALIBRATION_INTERVAL_MS - elapsed);
+    }
+  }
+
+  const double count = static_cast<double>(CALIBRATION_SAMPLES);
+  const double axRaw = accelSum[0] / count;
+  const double ayRaw = accelSum[1] / count;
+  const double azRaw = accelSum[2] / count;
+  const double gxRaw = gyroSum[0] / count;
+  const double gyRaw = gyroSum[1] / count;
+  const double gzRaw = gyroSum[2] / count;
+  const double expectedZRaw = azRaw >= 0.0 ? 16384.0 : -16384.0;
+
+  Serial.println("=== MPU6050 1000-sample calibration result ===");
+  Serial.printf("Average accel raw: X=%.2f Y=%.2f Z=%.2f\n",
+                axRaw, ayRaw, azRaw);
+  Serial.printf("Average accel [g]: X=%+.6f Y=%+.6f Z=%+.6f\n",
+                axRaw / 16384.0, ayRaw / 16384.0, azRaw / 16384.0);
+  Serial.printf("Accel bias raw (level, Z vertical): X=%.2f Y=%.2f Z=%.2f\n",
+                axRaw, ayRaw, azRaw - expectedZRaw);
+  Serial.printf("Gyro bias raw: X=%.2f Y=%.2f Z=%.2f\n",
+                gxRaw, gyRaw, gzRaw);
+  Serial.printf("Gyro bias [deg/s]: X=%+.6f Y=%+.6f Z=%+.6f\n",
+                gxRaw / 131.0, gyRaw / 131.0, gzRaw / 131.0);
+  Serial.printf("Average temperature: %.2f C | failed reads: %u\n",
+                temperatureSum / count / 340.0 + 36.53,
+                static_cast<unsigned>(failed));
+  Serial.println("Use corrected value = measured value - reported bias.");
+}
+
+void handleCommand(String command) {
+  command.trim();
+  if (command.equalsIgnoreCase("c")) {
+    calibrateMPU6050();
+  } else if (command.equalsIgnoreCase("r")) {
+    printMeasurement();
+  } else if (command.equalsIgnoreCase("m")) {
+    continuousOutputEnabled = !continuousOutputEnabled;
+    Serial.printf("Continuous MPU output: %s\n",
+                  continuousOutputEnabled ? "ON" : "OFF");
+  } else if (!command.isEmpty()) {
+    Serial.println("Commands: c = calibrate, r = read once, m = toggle continuous output");
+  }
+}
+
 }  // namespace MPU6050Test
 
 void setup() {
@@ -132,10 +225,24 @@ void setup() {
   }
 
   Serial.println("MPU6050 initialized successfully");
+  Serial.println("Commands: c = calibrate, r = read once, m = toggle continuous output");
 }
 
 void loop() {
   using namespace MPU6050Test;
+
+  static String command;
+  while (Serial.available()) {
+    const char ch = static_cast<char>(Serial.read());
+    if (ch == '\r' || ch == '\n') {
+      handleCommand(command);
+      command = "";
+    } else if (ch == '\b' || ch == 0x7F) {
+      if (!command.isEmpty()) command.remove(command.length() - 1);
+    } else if (isPrintable(ch)) {
+      command += ch;
+    }
+  }
 
   if (mpuAddress == 0) {
     delay(1000);
@@ -143,7 +250,7 @@ void loop() {
   }
 
   const uint32_t now = millis();
-  if (now - lastSampleMs >= SAMPLE_INTERVAL_MS) {
+  if (continuousOutputEnabled && now - lastSampleMs >= SAMPLE_INTERVAL_MS) {
     lastSampleMs = now;
     printMeasurement();
   }

@@ -17,7 +17,7 @@ constexpr uint32_t LU9685_I2C_CLOCK = 100000;
 constexpr uint32_t MPU6050_I2C_CLOCK = 400000;
 
 constexpr uint8_t LU9685_ADDRESS = 0x00;
-constexpr uint8_t SERVO_CHANNELS[] = {0, 2};
+constexpr uint8_t SERVO_CHANNELS[] = {1, 2};
 
 constexpr uint8_t MPU_ADDRESS_LOW = 0x68;
 constexpr uint8_t MPU_ADDRESS_HIGH = 0x69;
@@ -29,6 +29,8 @@ constexpr uint8_t REG_ACCEL_XOUT_H = 0x3B;
 constexpr uint8_t REG_PWR_MGMT_1 = 0x6B;
 constexpr uint8_t REG_WHO_AM_I = 0x75;
 constexpr uint32_t MPU_PRINT_INTERVAL_MS = 500;
+constexpr size_t MPU_CALIBRATION_SAMPLES = 1000;
+constexpr uint32_t MPU_CALIBRATION_INTERVAL_MS = 10;
 
 // Two independent automatic-direction TTL/RS485 channels from testMG.h.
 constexpr int MOTOR1_RX_PIN = 18;
@@ -278,8 +280,83 @@ void printMPU6050() {
       ax, ay, az, gx, gy, gz, temperature);
 }
 
+void calibrateMPU6050() {
+  if (mpuAddress == 0) {
+    TEST_SERIAL.println("[ERROR] MPU6050 is not initialized");
+    return;
+  }
+
+  TEST_SERIAL.println("MPU calibration starts: keep the robot completely still and level.");
+  TEST_SERIAL.printf("Collecting %u samples (about %lu seconds)...\n",
+                     static_cast<unsigned>(MPU_CALIBRATION_SAMPLES),
+                     static_cast<unsigned long>(
+                         MPU_CALIBRATION_SAMPLES * MPU_CALIBRATION_INTERVAL_MS / 1000));
+
+  int64_t accelSum[3] = {0, 0, 0};
+  int64_t gyroSum[3] = {0, 0, 0};
+  int64_t temperatureSum = 0;
+  size_t collected = 0;
+  size_t failed = 0;
+
+  while (collected < MPU_CALIBRATION_SAMPLES) {
+    const uint32_t sampleStart = millis();
+    uint8_t data[14];
+    if (readMPURegisters(REG_ACCEL_XOUT_H, data, sizeof(data))) {
+      accelSum[0] += combineBytes(data[0], data[1]);
+      accelSum[1] += combineBytes(data[2], data[3]);
+      accelSum[2] += combineBytes(data[4], data[5]);
+      temperatureSum += combineBytes(data[6], data[7]);
+      gyroSum[0] += combineBytes(data[8], data[9]);
+      gyroSum[1] += combineBytes(data[10], data[11]);
+      gyroSum[2] += combineBytes(data[12], data[13]);
+      ++collected;
+      if (collected % 100 == 0) {
+        TEST_SERIAL.printf("Calibration progress: %u/%u\n",
+                           static_cast<unsigned>(collected),
+                           static_cast<unsigned>(MPU_CALIBRATION_SAMPLES));
+      }
+    } else {
+      ++failed;
+      if (failed >= 100) {
+        TEST_SERIAL.println("[ERROR] Too many MPU6050 read failures; calibration aborted");
+        return;
+      }
+    }
+
+    const uint32_t elapsed = millis() - sampleStart;
+    if (elapsed < MPU_CALIBRATION_INTERVAL_MS) {
+      delay(MPU_CALIBRATION_INTERVAL_MS - elapsed);
+    }
+  }
+
+  const double count = static_cast<double>(MPU_CALIBRATION_SAMPLES);
+  const double axRaw = accelSum[0] / count;
+  const double ayRaw = accelSum[1] / count;
+  const double azRaw = accelSum[2] / count;
+  const double gxRaw = gyroSum[0] / count;
+  const double gyRaw = gyroSum[1] / count;
+  const double gzRaw = gyroSum[2] / count;
+  const double expectedZRaw = azRaw >= 0.0 ? 16384.0 : -16384.0;
+
+  TEST_SERIAL.println("=== MPU6050 1000-sample calibration result ===");
+  TEST_SERIAL.printf("Average accel raw: X=%.2f Y=%.2f Z=%.2f\n",
+                     axRaw, ayRaw, azRaw);
+  TEST_SERIAL.printf("Average accel [g]: X=%+.6f Y=%+.6f Z=%+.6f\n",
+                     axRaw / 16384.0, ayRaw / 16384.0, azRaw / 16384.0);
+  TEST_SERIAL.printf("Accel bias raw (level, Z vertical): X=%.2f Y=%.2f Z=%.2f\n",
+                     axRaw, ayRaw, azRaw - expectedZRaw);
+  TEST_SERIAL.printf("Gyro bias raw: X=%.2f Y=%.2f Z=%.2f\n",
+                     gxRaw, gyRaw, gzRaw);
+  TEST_SERIAL.printf("Gyro bias [deg/s]: X=%+.6f Y=%+.6f Z=%+.6f\n",
+                     gxRaw / 131.0, gyRaw / 131.0, gzRaw / 131.0);
+  TEST_SERIAL.printf("Average temperature: %.2f C | failed reads: %u\n",
+                     temperatureSum / count / 340.0 + 36.53,
+                     static_cast<unsigned>(failed));
+  TEST_SERIAL.println("Use corrected value = measured value - reported bias.");
+}
+
 bool setLU9685Angle(uint8_t channel, float angle) {
-  if ((channel != 0 && channel != 2) || angle < 0.0f || angle > 180.0f) {
+  if ((channel != 1 && channel != 2) || angle < 0.0f || angle > 180.0f) {
     return false;
   }
 
@@ -307,10 +384,11 @@ bool setBothServoAngles(float angle) {
 
 void printHelp() {
   TEST_SERIAL.println("Commands:");
-  TEST_SERIAL.println("  <angle>       set servo channels 0 and 2 (0..180)");
-  TEST_SERIAL.println("  <ch> <angle>  set servo channel 0 or 2");
+  TEST_SERIAL.println("  <angle>       set servo channels 1 and 2 (0..180)");
+  TEST_SERIAL.println("  <ch> <angle>  set servo channel 1 or 2");
   TEST_SERIAL.println("  m             enable/disable continuous MPU output");
   TEST_SERIAL.println("  r             print one MPU measurement");
+  TEST_SERIAL.println("  c             collect 1000 MPU samples and calculate bias");
   TEST_SERIAL.println("  w1 <value>    motor 1 torque (-100..100)");
   TEST_SERIAL.println("  w2 <value>    motor 2 torque (-100..100)");
   TEST_SERIAL.println("  wb <v1> <v2> both motor torques");
@@ -335,6 +413,10 @@ void handleCommand(String text) {
   if (text.equalsIgnoreCase("r")) {
     if (mpuAddress != 0) printMPU6050();
     else TEST_SERIAL.println("[ERROR] MPU6050 is not initialized");
+    return;
+  }
+  if (text.equalsIgnoreCase("c")) {
+    calibrateMPU6050();
     return;
   }
   if (text[0] == 'w' || text[0] == 'W') {
@@ -363,7 +445,7 @@ void handleCommand(String text) {
   const int channel = static_cast<int>(first);
   if (*angleEnd != '\0' || first != channel ||
       !setLU9685Angle(static_cast<uint8_t>(channel), angle)) {
-    TEST_SERIAL.println("Use: <ch> <angle>, ch is 0 or 2, angle is 0..180");
+    TEST_SERIAL.println("Use: <ch> <angle>, ch is 1 or 2, angle is 0..180");
   }
 }
 

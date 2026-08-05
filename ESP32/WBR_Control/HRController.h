@@ -1,8 +1,7 @@
 #ifndef HRCONTROLLER_H
 #define HRCONTROLLER_H
 
-#include "HardwareSerial.h"
-#include <ESP32Servo.h>
+#include <Wire.h>
 #include "Params.h"
 
 class HRController {
@@ -11,9 +10,8 @@ public:
   HRController() {}
 
   // 서보 핀 연결
-  void attachServos(int left_pin, int right_pin) {
-    left_servo.attach(left_pin);
-    right_servo.attach(right_pin);
+  bool begin() {
+    return Wire.begin(LU9685_SDA_PIN, LU9685_SCL_PIN, 100000);
   }
 
   // 서보 각도 설정
@@ -23,8 +21,8 @@ public:
     int angle_RH = constrain(RH_SERVO_C - theta_hips(0) * 180 / M_PI, RH_SERVO_MIN, RH_SERVO_MAX);
     int angle_LH = constrain(LH_SERVO_C - theta_hips(1) * 180 / M_PI, LH_SERVO_MIN, LH_SERVO_MAX);
 
-    right_servo.write(angle_RH);   
-    left_servo.write(angle_LH);
+    writeServoAngle(RH_SERVO_CHANNEL, angle_RH);
+    writeServoAngle(LH_SERVO_CHANNEL, angle_LH);
   }
 
   void printHipAngles() {
@@ -36,16 +34,20 @@ public:
 
 private:
   // 서보 각도 범위
-  const int LH_SERVO_MIN = 60;   // 왼쪽 서보 최소각도
-  const int LH_SERVO_MAX = 160;  // 왼쪽 서보 최대각도
-  const int LH_SERVO_C = 90;     // 왼쪽 서보 중앙값
+  const int LH_SERVO_MIN = 88;
+  const int LH_SERVO_MAX = 171;
+  const int LH_SERVO_C = 101;
 
-  const int RH_SERVO_MIN = 20;   // 오른쪽 서보 최소각도
-  const int RH_SERVO_MAX = 120;  // 오른쪽 서보 최대각도
-  const int RH_SERVO_C = 90;     // 오른쪽 서보 중앙값
+  const int RH_SERVO_MIN = 15;
+  const int RH_SERVO_MAX = 98;
+  const int RH_SERVO_C = 85;
 
-  Servo left_servo;
-  Servo right_servo;
+  bool writeServoAngle(uint8_t channel, uint8_t angle) {
+    Wire.beginTransmission(LU9685_ADDRESS);
+    Wire.write(channel);
+    Wire.write(angle);
+    return Wire.endTransmission() == 0;
+  }
 
   Eigen::Vector2f theta_hips;
 };

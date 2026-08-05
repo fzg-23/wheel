@@ -20,8 +20,11 @@ public:
   // 캘리브레이션 값
   // Eigen::Vector3f gyro_bias{ -0.1230688696f, -0.0304898514f,	0.01379522641f};    // (rad/s)
   // Eigen::Vector3f accel_bias{ 0.1981802f,	-0.333633411f,	-0.36471631818f};  // (m/s^2)
-  Eigen::Vector3f gyro_bias{ -0.12033161f, -0.02295994f,	0.00176078f};    // (rad/s)
-  Eigen::Vector3f accel_bias{ 0.564718225f,	-0.083566378f,	-0.735670791f};  // (m/s^2)
+  Eigen::Vector3f gyro_bias{-0.012987159f, 0.024731049f,
+                            0.000443216f};  // rad/s
+  Eigen::Vector3f accel_offset_raw{497.735f, 77.190f, 813.265f};
+  Eigen::Vector3f accel_sensitivity{16362.115f, 16382.780f,
+                                    16732.935f};  // raw/g
   // Eigen::Vector3f gyro_bias{ 0.f, 0.f, 0.f};    // (rad/s)
   // Eigen::Vector3f accel_bias{ 0.f,	0.f,	0.f};  // (m/s^2)
   
@@ -29,25 +32,25 @@ public:
   // 생성자
   IMU() {}
   bool begin() {
-    Wire.begin(SDA_PIN, SCL_PIN, 400000);  // SDA, SCL 핀과 클록 속도 설정
+    Wire1.begin(SDA_PIN, SCL_PIN, 400000);  // Dedicated MPU6050 I2C bus
     // clock frequency: 400kHz
-    Wire.beginTransmission(0x68);  // I2C 주소
+    Wire1.beginTransmission(0x68);  // I2C 주소
 
     // 1. 슬립 모드 비활성화 (PWR_MGMT_1 레지스터)
-    Wire.write(0x6B);  // PWR_MGMT_1 레지스터
-    Wire.write(0x00);     // 슬립 모드 비활성화
-    if (Wire.endTransmission(true) != 0) {
+    Wire1.write(0x6B);  // PWR_MGMT_1 레지스터
+    Wire1.write(0x00);     // 슬립 모드 비활성화
+    if (Wire1.endTransmission(true) != 0) {
       Serial.println("[Error] Failed to initialize MPU6050. Check connections!");
       return false;
     }
 
     // 2. DLPF 설정 (CONFIG 레지스터)
-    Wire.beginTransmission(0x68);  // I2C 주소
-    Wire.write(0x1A);              // CONFIG 레지스터
-    Wire.write(0x00);              // DLPF Off 설정
+    Wire1.beginTransmission(0x68);  // I2C 주소
+    Wire1.write(0x1A);              // CONFIG 레지스터
+    Wire1.write(0x00);              // DLPF Off 설정
     // Wire.write(0x02);              // DLPF 94Hz 설정
     // Wire.write(0x05);  // DLPF 10Hz 설정
-    if (Wire.endTransmission(true) != 0) {
+    if (Wire1.endTransmission(true) != 0) {
       Serial.println("[Error] Failed to set DLPF. Check connections!");
       return false;
     }
@@ -78,22 +81,22 @@ public:
   }
 
   bool readData() {
-    Wire.beginTransmission(0x68);  // I2C 주소
-    Wire.write(0x3B);              // 시작 레지스터 (ACCEL_XOUT_H)
-    if (Wire.endTransmission(false) != 0) {
+    Wire1.beginTransmission(0x68);  // I2C 주소
+    Wire1.write(0x3B);              // 시작 레지스터 (ACCEL_XOUT_H)
+    if (Wire1.endTransmission(false) != 0) {
       return false;  // 데이터 요청 실패
     }
 
     // 14바이트 요청
-    Wire.requestFrom(static_cast<uint8_t>(0x68), static_cast<size_t>(14), true);
-    if (Wire.available() < 14) {
+    Wire1.requestFrom(static_cast<uint8_t>(0x68), static_cast<size_t>(14), true);
+    if (Wire1.available() < 14) {
       return false;  // 데이터 수신 실패
     }
 
     // 데이터 읽기 및 처리
     uint8_t buffer[14];
     for (int i = 0; i < 14; i++) {
-      buffer[i] = Wire.read();
+      buffer[i] = Wire1.read();
     }
 
     // 가속도 데이터
@@ -108,8 +111,19 @@ public:
       (buffer[12] << 8 | buffer[13]);
 
     // 단위 변환 및 보정
-    acc_vec = (acc_raw_vec.cast<float>() / 16384.0f) * 9.80665f - accel_bias;
+    acc_vec = (acc_raw_vec.cast<float>() - accel_offset_raw)
+                  .cwiseQuotient(accel_sensitivity) *
+              9.80665f;
     gyr_vec = (gyr_raw_vec.cast<float>() / 131.0f) * M_PI / 180 - gyro_bias;
+
+    // MPU mounting to robot body frame: robot +X = sensor +X,
+    // robot +Y (left) = sensor -Y, therefore robot +Z = sensor -Z.
+    // This is a proper 180-degree rotation about the X axis and must be
+    // applied identically to acceleration and angular velocity.
+    acc_vec.y() = -acc_vec.y();
+    acc_vec.z() = -acc_vec.z();
+    gyr_vec.y() = -gyr_vec.y();
+    gyr_vec.z() = -gyr_vec.z();
 
     applyFilters();
 
