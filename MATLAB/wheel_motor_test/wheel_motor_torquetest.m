@@ -1,9 +1,9 @@
 clc; clear;
 format long;
 
-% CSV 파일 읽기
-filename = '20241229_logdata_wheelmotor_torquetest_3ms_Kp200_Ki255.csv'; % CSV 파일 이름
-% filename = '20241227_logdata_wheelmotor_torquetest_3ms.csv'; % CSV 파일 이름
+% 读取 CSV 文件
+filename = '20241229_logdata_wheelmotor_torquetest_3ms_Kp200_Ki255.csv'; % CSV 文件名
+% 文件名='20241227_logdata_wheelmotor_torquetest_3ms.csv'; % CSV 文件名
 
 data = readtable(filename);
 
@@ -29,8 +29,8 @@ iq_RW_input = data.tau_RW(1:time_cut_idx);  % (LSD)
 theta_dot_LW = data.theta_dot_LW(1:time_cut_idx); % rad/s
 theta_dot_RW = data.theta_dot_RW(1:time_cut_idx); % rad/s
 
-% 변환 상수
-iq_to_actual = 3.3 / 2048;       % Iq 변환 계수 (raw to actual current)
+%转换常数
+iq_to_actual = 3.3 / 2048;       % Iq 转换系数（原始电流至实际电流）
 encoder_to_degrees = 2*pi/65536;
 torque_constant = 0.7;         % Torque Constant (Nm/A)
 
@@ -41,24 +41,24 @@ right_Inertia = 0.00064074279507983; % kg*m^2
 % left_Inertia = 0.00072399902807526 + 87235.791*1e-9 ; % kg*m^2
 % right_Inertia = 0.00064074279507983 + 87235.791*1e-9 ; % kg*m^2
 
-% Sampling time 계산 (TimeStamp는 밀리초 단위라고 가정)
-dt = diff(timeStamp) / 1000; % 초 단위로 변환
+% 计算采样时间（假设TimeStamp以毫秒为单位）
+dt = diff(timeStamp) / 1000; % 转换为秒
 
-% Speed를 사용하여 Acceleration 계산
+% 使用速度计算加速度
 theta_ddot_LW = diff(theta_dot_LW) ./ dt; 
 theta_ddot_RW = diff(theta_dot_RW) ./ dt;
 
 tau_LW = left_Inertia * theta_ddot_LW;
 tau_RW = right_Inertia * theta_ddot_RW;
 
-% 시간축 조정
-timeStamp_acceleration = timeStamp(1:end-1); % Acceleration 시간축
+% 时间轴调整
+timeStamp_acceleration = timeStamp(1:end-1); %加速时间轴
 % 
-% speed의 절대값이 32 이상인 인덱스를 추출
+% 提取速度绝对值大于或等于32的索引。
 LW_speed_idx = find(abs(theta_dot_LW) >= 20);
 RW_speed_idx = find(abs(theta_dot_RW) >= 20);
 
-% motor1_input에서 해당 인덱스를 제외
+% 从 motor1_input 中排除该索引
 iq_LW_input_filtered = iq_LW_input(1:end-1);
 tau_LW_filtered = tau_LW;
 iq_LW_output_filtered = iq_LW_output(2:end);
@@ -66,7 +66,7 @@ iq_LW_input_filtered(LW_speed_idx(1:end-1)) = [];
 tau_LW_filtered(LW_speed_idx(1:end-1)) = [];
 iq_LW_output_filtered(LW_speed_idx(1:end-1)) = [];
 
-% motor1_input에서 해당 인덱스를 제외
+% 从 motor1_input 中排除该索引
 iq_RW_input_filtered = iq_RW_input(1:end-1);
 tau_RW_filtered = tau_RW;
 iq_RW_output_filtered = iq_RW_output(2:end);
@@ -75,10 +75,10 @@ tau_RW_filtered(RW_speed_idx(1:end-1)) = [];
 iq_RW_output_filtered(RW_speed_idx(1:end-1)) = [];
 
 
-% Plot 데이터 비교
+% 绘图数据比较
 figure;
 
-% Angular Acceleration 비교
+% 角加速度比较
 subplot(3, 2, 1);
 plot(timeStamp_acceleration, tau_LW, 'r', 'DisplayName', '\tau_{LW}'); hold on;
 % plot(timeStamp_acceleration, iq_LW_input(1:end-1)*iq_to_actual*torque_constant, 'k', 'DisplayName', '\tau_{LW,in}');
@@ -99,7 +99,7 @@ ylabel('torque (Nm)');
 legend('show'); hold off;
 
 
-% Speed 비교
+% 速度对比
 subplot(3, 2, 3);
 plot(timeStamp, theta_dot_LW, 'r', 'DisplayName', 'd\theta_{LW}');
 title('Speed');
@@ -114,7 +114,7 @@ xlabel('TimeStamp');
 ylabel('Speed(rad/s)');
 legend('show'); hold off;
 
-% iq current 비교
+% 智商电流比较
 subplot(3, 2, 5);
 plot(timeStamp, iq_LW_input, 'k', 'DisplayName', 'iq_{in}'); hold on;
 plot(timeStamp, iq_LW_output, 'r', 'DisplayName', 'iq_{out}');

@@ -1,35 +1,35 @@
 #ifndef TIMER_H
 #define TIMER_H
 
-#include <Arduino.h>  // millis() 및 micros() 함수 사용을 위한 헤더
+#include <Arduino.h>  // 使用 millis() 和 micros() 函数的标头
 
 class Timer {
 public:
   enum class TimerType {
-    Millis,  // millis 기반 타이머
-    Micros   // micros 기반 타이머
+    Millis,  // 基于毫秒的计时器
+    Micros   // 基于微秒的定时器
   };
 
 private:
-  TimerType timer_type_;     // 타이머 타입 (Millis 또는 Micros)
-  unsigned long start_time_; // 타이머 시작 시간
+  TimerType timer_type_;     // 定时器类型（毫利斯或微米）
+  unsigned long start_time_; // 定时器开始时间
 
 public:
-  // 생성자: 타이머 타입 설정
+  // 构造函数：设置定时器类型
   Timer(TimerType type) : timer_type_(type), start_time_(0) {}
 
-  // 타이머 시작
+  // 计时器开始
   void start() {
     start_time_ = (timer_type_ == TimerType::Millis) ? millis() : micros();
   }
 
-  // 경과 시간 반환
+  // 返回经过的时间
   unsigned long getDuration() const {
     unsigned long current_time = (timer_type_ == TimerType::Millis) ? millis() : micros();
     return current_time - start_time_;
   }
 
-  // 타이머 리셋
+  // 定时器重置
   void reset() {
     start_time_ = 0;
   }

@@ -4,19 +4,19 @@
 #include <Arduino.h>
 #include "Params.h"
 
-// 명령어 및 응답 프레임의 길이 정의
+// 定义命令和响应帧的长度
 constexpr uint8_t FRAME_COMMAND_LENGTH = 5;
 constexpr uint8_t TORQUE_CONTROL_LENGTH = 2;
 constexpr uint8_t SPEED_CONTROL_LENGTH = 4;
 constexpr uint8_t READ_MOTOR_STATE2_LENGTH = 7;
 
-// 명령어 타입 정의
+// 命令类型定义
 constexpr uint8_t FRAME_HEAD = 0x3E;
 constexpr uint8_t TORQUE_CONTROL_COMMAND = 0xA1;
 constexpr uint8_t SPEED_CONTROL_COMMAND = 0xA2;
 constexpr uint8_t READ_MOTOR_STATE2_COMMAND = 0x9C;
 
-// MGServo 클래스 정의
+// MGServo类定义
 class MGServo {
 private:
   HardwareSerial& RS485;
@@ -70,7 +70,7 @@ public:
   }
   ////////////////////////////////////////////
 
-  // 토크 제어 명령 전송
+  // 扭矩控制指令传输
   bool sendTorqueControlCommand(int16_t iqControl) {
     const size_t commandLength = FRAME_COMMAND_LENGTH + TORQUE_CONTROL_LENGTH + 1;      // frame + data + data_checksum
     const size_t responseLength = FRAME_COMMAND_LENGTH + READ_MOTOR_STATE2_LENGTH + 1;  // frame + data + data_checksum
@@ -78,20 +78,20 @@ public:
     uint8_t command[commandLength];
     uint8_t response[responseLength];
 
-    writeTorqueControlCommand(command, iqControl);  // command array에 command frame 작성
-    sendCommand(command, commandLength);            // RS485를 통해 command 전송
+    writeTorqueControlCommand(command, iqControl);  // 在命令数组中创建命令帧
+    sendCommand(command, commandLength);            // 通过RS485传输命令
 
-    // RS485를 통해 response를 받고 response validation
+    // 通过RS485接收响应并验证响应
     if (!readResponse(response, responseLength) || !validateResponse(response, responseLength)) {
       return false;
     }
 
-    // response 정보를 통해 Motor state update
+    // 通过响应信息更新电机状态
     extractReadState2Data(response);
     return true;
   }
 
-  // 모터 상태 2 읽기 명령 전송
+  // 发送电机状态2读取命令
   bool sendCommandReadMotorState2() {
     const size_t commandLength = FRAME_COMMAND_LENGTH;                                  // frame + data + data_checksum
     const size_t responseLength = FRAME_COMMAND_LENGTH + READ_MOTOR_STATE2_LENGTH + 1;  // frame + data + data_checksum
@@ -99,15 +99,15 @@ public:
     uint8_t command[commandLength];
     uint8_t response[responseLength];
 
-    writeReadState2Command(command);      // command array에 command frame 작성
-    sendCommand(command, commandLength);  // RS485를 통해 command 전송
+    writeReadState2Command(command);      // 在命令数组中创建命令帧
+    sendCommand(command, commandLength);  // 通过RS485传输命令
 
-    // RS485를 통해 response를 받고 response validation
+    // 通过RS485接收响应并验证响应
     if (!readResponse(response, responseLength) || !validateResponse(response, responseLength)) {
       return false;
     }
 
-    // response 정보를 통해 Motor state update
+    // 通过响应信息更新电机状态
     extractReadState2Data(response);
     return true;
   }
@@ -133,7 +133,7 @@ public:
 
 private:
 
-  // 토크 제어 명령 프레임 준비
+  // 扭矩控制命令帧准备
   void writeTorqueControlCommand(uint8_t* command, int16_t iqControl) {
     prepareCommandFrame(command, TORQUE_CONTROL_COMMAND, TORQUE_CONTROL_LENGTH);
     command[FRAME_COMMAND_LENGTH] = iqControl & 0xFF;
@@ -141,7 +141,7 @@ private:
     command[FRAME_COMMAND_LENGTH + 2] = calculateChecksum(&command[FRAME_COMMAND_LENGTH], TORQUE_CONTROL_LENGTH);
   }
 
-  // 속도 제어 명령 프레임 준비
+  // 速度控制命令帧准备
   void writeSpeedControlCommand(uint8_t* command, int32_t speedControl) {
     prepareCommandFrame(command, SPEED_CONTROL_COMMAND, SPEED_CONTROL_LENGTH);
     command[FRAME_COMMAND_LENGTH] = *(uint8_t*)(&speedControl);
@@ -151,21 +151,21 @@ private:
     command[FRAME_COMMAND_LENGTH + 4] = calculateChecksum(&command[FRAME_COMMAND_LENGTH], SPEED_CONTROL_LENGTH);
   }
 
-  // 모터 상태 2 명령 프레임 준비
+  // 电机状态 2 命令帧就绪
   void writeReadState2Command(uint8_t* command) {
     prepareCommandFrame(command, READ_MOTOR_STATE2_COMMAND, 0x00);
   }
 
-  // 명령 프레임 준비
+  // 准备命令帧
   void prepareCommandFrame(uint8_t* command, const uint8_t commandType, const uint8_t dataLength) {
     command[0] = FRAME_HEAD;
-    command[1] = commandType;                    // 명령어 타입
-    command[2] = motorID;                        // 모터 ID
-    command[3] = dataLength;                     // 데이터 길이
-    command[4] = calculateChecksum(command, 4);  // 체크섬 계산
+    command[1] = commandType;                    // 命令类型
+    command[2] = motorID;                        // 电机编号
+    command[3] = dataLength;                     // 数据长度
+    command[4] = calculateChecksum(command, 4);  // 校验和计算
   }
 
-  // 모터 상태 2 데이터 추출
+  // 电机状态2数据提取
   void extractReadState2Data(const uint8_t* response) {
     temperature = (int8_t)response[FRAME_COMMAND_LENGTH];
     iq_raw = (int16_t)(response[FRAME_COMMAND_LENGTH + 1] | (response[FRAME_COMMAND_LENGTH + 2] << 8));
@@ -175,34 +175,34 @@ private:
     encoder = (uint16_t)(response[FRAME_COMMAND_LENGTH + 5] | (response[FRAME_COMMAND_LENGTH + 6] << 8));
   }
 
-  // 명령 전송
+  // 发送命令
   void sendCommand(const uint8_t* command, const size_t commandLength) {
-    // 송수신 버퍼 초기화
+    // 发送/接收缓冲区初始化
     while (RS485.available()) {
-      RS485.read();  // 버퍼 비우기
+      RS485.read();  // 空缓冲区
     }
 
-    // RS485 송신 모드로 전환
+    // 切换至RS485传输模式
     toggleRS485Mode(HIGH);
 
-    // 명령 전송
+    // 发送命令
     RS485.write(command, commandLength);
-    RS485.flush();  // 전송 완료 대기
+    RS485.flush();  // 等待传输完成
 
-    // RS485 수신 모드로 복귀
+    // 返回RS485接收模式
     toggleRS485Mode(LOW);
   }
 
 
-  // 응답 읽기
+  // 读取回复
   bool readResponse(uint8_t* response, const size_t responseLength) {
     toggleRS485Mode(LOW);
 
-    unsigned long startTime = micros();  // 타이머 시작
+    unsigned long startTime = micros();  // 计时器开始
     while (RS485.available() < responseLength) {
       if (micros() - startTime > 5000) {
             Serial.println("[ERROR] Response timeout! No sufficient data received.");
-            return false;  // 타임아웃 발생
+            return false;  // 发生超时
         }
     }
     size_t bytesRead = RS485.readBytes(response, responseLength);
@@ -216,7 +216,7 @@ private:
     return true;
   }
 
-  // 응답 검증
+  // 响应验证
   bool validateResponse(const uint8_t* response, size_t responseLength) const {
     if (calculateChecksum(response, 4) != response[4]) {
       Serial.print("[ERROR] Frame Checksum mismatch!");
@@ -240,12 +240,12 @@ private:
     return true;
   }
 
-  // RS485 모드 전환
+  // RS485模式切换
   void toggleRS485Mode(uint8_t mode) const {
     if (!automaticDirection) digitalWrite(RS485_DE_RE, mode);
   }
 
-  // 체크섬 계산
+  // 校验和计算
   uint8_t calculateChecksum(const uint8_t* data, uint8_t length) const {
     uint16_t checksum = 0;
     for (uint8_t i = 0; i < length; ++i) {
@@ -254,7 +254,7 @@ private:
     return checksum & 0xFF;
   }
 
-  // 디버깅용 정보 출력
+  // 输出信息用于调试
   void printInfo() const {
     Serial.print("Motor ID: ");
     Serial.print(motorID);

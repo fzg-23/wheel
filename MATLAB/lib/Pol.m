@@ -161,8 +161,8 @@ classdef Pol < handle
             cos_theta = cos(theta);
             sin_theta = sin(theta);
 
-            % h_obs 계산
-            h_obs = zeros(8, 1); % 결과를 저장할 벡터
+            % h_obs计算
+            h_obs = zeros(8, 1); % 用于存储结果的向量
             h_obs(1) = obj.h * theta_ddot + v_dot * cos_theta - obj.g * sin_theta - obj.h * psi_dot^2 * cos_theta * sin_theta;
             h_obs(2) = psi_dot * v + obj.h * psi_ddot * sin_theta + obj.h * psi_dot * theta_dot * cos_theta * 2.0;
             h_obs(3) = -obj.h * theta_dot^2 + obj.g * cos_theta + v_dot * sin_theta - psi_dot^2 * (obj.h - obj.h * cos_theta^2);
@@ -175,8 +175,8 @@ classdef Pol < handle
             h_obs(7) = theta_dot - v / obj.R - (obj.L * psi_dot) / obj.R;
             h_obs(8) = -theta_dot + v / obj.R - (obj.L * psi_dot) / obj.R;
 
-            % H 행렬 계산
-            H = zeros(8, 4); % 8x4 크기의 행렬
+            % H矩阵计算
+            H = zeros(8, 4); % 8x4矩阵
             H(1, 1) = psi_dot^2 * (obj.h * sin_theta^2 - obj.h * cos_theta^2) - obj.g * cos_theta - v_dot * sin_theta;
             H(2, 1) = obj.h * psi_ddot * cos_theta - obj.h * psi_dot * theta_dot * sin_theta * 2.0;
             H(3, 1) = v_dot * cos_theta - obj.g * sin_theta - obj.h * psi_dot^2 * cos_theta * sin_theta * 2.0;
@@ -235,8 +235,8 @@ classdef Pol < handle
             cos_theta = cos(theta);
             sin_theta = sin(theta);
 
-            % h_obs 계산
-            h_obs = zeros(8, 1); % 결과를 저장할 벡터
+            % h_obs计算
+            h_obs = zeros(8, 1); % 用于存储结果的向量
             h_obs(1) = obj.h * theta_ddot + v_dot * cos_theta - obj.g * sin_theta - obj.h * psi_dot^2 * cos_theta * sin_theta;
             h_obs(2) = psi_dot * v + obj.h * psi_ddot * sin_theta + obj.h * psi_dot * theta_dot * cos_theta * 2.0;
             h_obs(3) = -obj.h * theta_dot^2 + obj.g * cos_theta + v_dot * sin_theta - psi_dot^2 * (obj.h - obj.h * cos_theta^2);

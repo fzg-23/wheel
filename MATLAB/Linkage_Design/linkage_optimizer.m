@@ -193,9 +193,9 @@ num_loop = l1_len * l2_len * l3_len * l4_len * l5_len;
 fprintf("the number of loops : %d", num_loop);
 
 plot_idx = 1;
-num_plot = 5; % 한 figure에 최대 5개의 plot이 들어가도록 설정
+num_plot = 5; % 在一张图中最多设置 5 个绘图
 
-current_loop = 0; % 진행된 loop 카운트
+current_loop = 0; % 进度循环计数
 
 % Loop through each l1 value
 for l1 = l1_values
@@ -205,7 +205,7 @@ for l1 = l1_values
             fprintf("Progress : %.2f%% \n", progress);
             for l4 = l4_values
                 for l5 = l5_values
-                    current_loop = current_loop + 1; % loop 진행수 추가
+                    current_loop = current_loop + 1; % 添加循环进度计数
 
                     beta = atan(l5/l4);
                     len_de = sqrt(l4^2 + l5^2);
@@ -238,7 +238,7 @@ for l1 = l1_values
                     [E_y_min, min_idx] = min(E_y);
                     [E_y_max, max_idx] = max(E_y);
                     
-                    % E_y가 desired variation을 갖는지 확인
+                    % 检查 E_y 是否具有所需的变化
                     if(E_y_max < y_max || E_y_min > y_min)
                         continue;
                     end
@@ -252,7 +252,7 @@ for l1 = l1_values
                     theta_k_cut = theta_k(idx_gt_low:idx_gt_up);
                     phi_cut = phi(idx_gt_low:idx_gt_up);
 
-                    % E_x의 x 변화량이 10mm 이내인지 확인
+                    % 检查E_x的x变化是否在10mm以内
                     if isempty(E_x_cut)
                         continue;
                     end
@@ -262,13 +262,13 @@ for l1 = l1_values
                         continue;
                     end
                     
-                    % A점이 동력원일 때의 torque 계산
+                    % A点为动力源时的扭矩计算
                     FDx = (len_de * cos(theta_k_cut + beta) * W) ./ ((-tan(phi_cut)+tan(theta_k_cut))*l3.*cos(theta_k_cut)*2);
                     FDy = -W/2+tan(phi_cut).*FDx;
                     tau_A = l1 * (FDy.*cos(theta_cut) - FDx.*sin(theta_cut));
                     tau_A = tau_A * 1e-3; % convert unit Nmm to Nm
 
-                    % B점이 동력원일 때의 torque 계산
+                    % B点为动力源时的扭矩计算
                     FCx = -W ./ (2*(-tan(theta_cut)+tan(theta_k_cut))) .* (1 + len_de / l3 * cos(theta_k_cut + beta) ./ cos(theta_k_cut));
                     FCy = -W/2 + tan(theta_cut) .* FCx;
                     tau_B = l2 * (FCy.*cos(phi_cut) - FCx.*sin(phi_cut));

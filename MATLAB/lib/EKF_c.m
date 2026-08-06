@@ -24,19 +24,19 @@ classdef EKF_c < handle
             obj.Pol = Pol_;
             obj.dt = Ts;
 
-            % 상태 벡터 크기 확인
+            % 检查状态向量大小
             stateSize = size(initialState, 1);
             measurementSize = size(measurementNoise, 1);
 
             obj.z = zeros(measurementSize, 1);
 
 
-            % 예외 처리: Q의 크기 확인
+            % 异常处理：检查Q的大小
             if ~isequal(size(processNoise), [stateSize, stateSize])
                 error('Process noise Q must be a square matrix with size [%d, %d].', stateSize, stateSize);
             end
 
-            % 예외 처리: P의 크기 확인
+            % 异常处理：检查P的大小
             if ~isequal(size(initialCovariance), [stateSize, stateSize])
                 error('Initial covariance P must be a square matrix with size [%d, %d].', stateSize, stateSize);
             end
@@ -48,14 +48,14 @@ classdef EKF_c < handle
             obj.Pol.calculateJacobian();
 
             [obj.x, obj.x_dot, obj.F] = obj.Pol.predict_state(obj.dt);
-            obj.P = obj.F * obj.P * obj.F' + obj.Q; % 예측된 오차 공분산 행렬
+            obj.P = obj.F * obj.P * obj.F' + obj.Q; % 预测误差协方差矩阵
         end
 
         function obj = update(obj, z)
             [obj.h_obs, obj.H] = obj.Pol.predict_measurement(obj.x_dot, obj.x);
-            K = obj.P * obj.H' / (obj.H * obj.P * obj.H' + obj.R); % 칼만 이득
-            obj.x = obj.x + K * (z - obj.h_obs); % 상태 업데이트
-            obj.P = (eye(length(obj.x)) - K * obj.H) * obj.P; % 오차 공분산 업데이트
+            K = obj.P * obj.H' / (obj.H * obj.P * obj.H' + obj.R); % 卡尔曼增益
+            obj.x = obj.x + K * (z - obj.h_obs); % 状态更新
+            obj.P = (eye(length(obj.x)) - K * obj.H) * obj.P; % 误差协方差更新
         end
 
         function obj = update_test(obj, z, observe_model, Case_num)
@@ -66,9 +66,9 @@ classdef EKF_c < handle
             elseif Case_num == 3
                 [obj.h_obs, obj.H] = observe_model.h_obs_f_case3(obj.x);
             end
-            K = obj.P * obj.H' / (obj.H * obj.P * obj.H' + obj.R); % 칼만 이득
-            obj.x = obj.x + K * (z - obj.h_obs); % 상태 업데이트
-            obj.P = (eye(length(obj.x)) - K * obj.H) * obj.P; % 오차 공분산 업데이트
+            K = obj.P * obj.H' / (obj.H * obj.P * obj.H' + obj.R); % 卡尔曼增益
+            obj.x = obj.x + K * (z - obj.h_obs); % 状态更新
+            obj.P = (eye(length(obj.x)) - K * obj.H) * obj.P; % 误差协方差更新
         end
     end
 end

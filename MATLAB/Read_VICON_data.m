@@ -1,15 +1,15 @@
 clc; clear;
-% delete(findall(0, 'Type', 'figure')); % 이렇게 해야 uifigure가 제거됨
+% 删除(findall(0, '类型', '数字')); % 这将删除 uifigure
 format long;
 
 addpath("lib\");
 addpath("log_plot\");
 addpath("VICON_data\");
 
-% CSV 파일 읽기
-filename = '20250209_VICON_Test_EKF_Hard.csv'; % CSV 파일 이름
+% 读取 CSV 文件
+filename = '20250209_VICON_Test_EKF_Hard.csv'; % CSV 文件名
 FPS = 250; % Hz
-h_offset = 0.2; % height (m) - VICON 설정에서 지정한 IMU로부터의 Offset
+h_offset = 0.2; % 高度 (m) - VICON 设置中指定的 IMU 偏移
 r = 0.072; % wheel radius
 % time_cutter = [6.028, 30];
 time_cutter = [0, 60];
@@ -18,10 +18,10 @@ cutted_idx = round(time_cutter*FPS);
 cutted_idx(1) = max(1, cutted_idx(1));
 
 
-% CSV 파일 전체 읽기 (문자열 포함)
+% 读取整个 CSV 文件（包括字符串）
 rawData = readcell(filename);
 
-% 4행부터 데이터를 숫자 행렬로 변환
+% 从第 4 行开始，将数据转换为数值矩阵。
 data = cell2mat(rawData(4:end, [1,3:end]));
 data_len = size(data,1);
 
@@ -71,7 +71,7 @@ dR_WB = zeros(3,3,data_len);
 for i = 1:3
     for j = 1:3
         temp_R = reshape(R_WB(i,j,:),1,data_len);
-        % R_WB의 각 성분에 대해 gradient를 계산
+        % 计算 R_WB 每个分量的梯度
         dR_WB(i, j, :) = gradient(temp_R) * FPS;
     end
 end
@@ -86,9 +86,9 @@ v_trues = v_C_woco_vecs(1,:);
 psi_dot_trues = gradient(yaws) * FPS;
 
 
-screenSize = get(0, 'ScreenSize'); % 화면 크기 가져오기
+screenSize = get(0, 'ScreenSize'); %获取屏幕尺寸
 
-% uifigure 생성 (전체 화면 크기로 설정)
+% 创建uifigure（设置为全屏尺寸）
 fig = uifigure('Name', filename + " Read_VICON_data", 'Position', [0, 0, screenSize(3), screenSize(4)*0.97]);
 tabGroup = uitabgroup(fig, 'Position', [0, 0, fig.Position(3), fig.Position(4)]);
 

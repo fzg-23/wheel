@@ -1,9 +1,9 @@
 clc; clear;
-% delete(findall(0, 'Type', 'figure')); % 이렇게 해야 uifigure가 제거됨
+% 删除(findall(0, '类型', '数字')); % 这将删除 uifigure
 format long;
 
-% CSV 파일 읽기
-filename = '20250210_maxyawrate.csv'; % CSV 파일 이름
+% 读取 CSV 文件
+filename = '20250210_maxyawrate.csv'; % CSV 文件名
 time_cutter = [0,1000];
 angle_unit = 1;
 % 0 : degree, 1: rad
@@ -40,27 +40,27 @@ theta_dot_RW = data.theta_dot_RW;
 tau_LW = data.tau_LW;
 tau_RW = data.tau_RW;
 
-% Sampling time 계산 (TimeStamp는 밀리초 단위라고 가정)
+% 计算采样时间（假设TimeStamp以毫秒为单位）
 Ts = round(mean(diff(timeStamp*1000)))/1000;
 fprintf("Sampling time : %d (ms) \n", Ts*1000);
 
-% Speed를 사용하여 Acceleration 계산
+% 使用速度计算加速度
 theta_ddot_LW = gradient(theta_dot_LW)/Ts;
 theta_ddot_RW = gradient(theta_dot_RW)/Ts;
 
-% total acceleration 계산
+% 计算总加速度
 total_acc = sqrt(acc_x_imu.^2+acc_y_imu.^2+acc_z_imu.^2);
 
-% time cutter maximum 설정
+% 时间切割器最大设置
 
 time_cutter(2) = min(time_cutter(2), max(timeStamp));
 cutted_idx = round(time_cutter/Ts);
 cutted_idx(1) = max(cutted_idx(1), 1);
 
 % ==================== Plot Start ========================================
-screenSize = get(0, 'ScreenSize'); % 화면 크기 가져오기
+screenSize = get(0, 'ScreenSize'); %获取屏幕尺寸
 
-% uifigure 생성 (전체 화면 크기로 설정)
+% 创建uifigure（设置为全屏尺寸）
 fig = uifigure('Name', filename + "/ data_plotter", 'Position', [0, 0, screenSize(3), screenSize(4)*0.97]);
 tabGroup = uitabgroup(fig, 'Position', [0, 0, fig.Position(3), fig.Position(4)]);
 

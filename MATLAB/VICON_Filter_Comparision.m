@@ -1,5 +1,5 @@
 clc; clear;
-% delete(findall(0, 'Type', 'figure')); % 이렇게 해야 uifigure가 제거됨
+% 删除(findall(0, '类型', '数字')); % 这将删除 uifigure
 format long;
 
 addpath("lib\");
@@ -15,15 +15,15 @@ filename_Pow = '20250209_EKFTunning_hardterrain.csv';
 
 % === VICON ===
 VICON_FPS = 250; % Hz
-% h_offset = 0.2; % height (m) - VICON 설정에서 지정한 IMU로부터의 Offset
-h_offset = -0.104535; % height (m) - VICON 설정에서 지정한 IMU로부터의 Offset
+% h_偏移量=0.2； % height (m) - 相对于 VICON 设置中指定的 IMU 的偏移
+h_offset = -0.104535; % 高度 (m) - VICON 设置中指定的 IMU 偏移
 
 % === System (Pow) ===
 Ts = 0.008; % Sampling time
 
 % === EKF ===
 Case_num = 0;
-P_init = eye(4)*1; % 초기 추정 오차 공분산 행렬
+P_init = eye(4)*1; % 初始估计误差协方差矩阵
 R_cov = []; % Sensor noise Covariance Matrix
 Q_cov = []; % Process noise Covariance Matrix
 
@@ -162,7 +162,7 @@ for i = 1:length(timeStamp_Pow)
 end
 
 % Synchronization
-% hs와 h_d_log의 동기화 작업
+% hs和h_d_log之间的同步操作
 hs_sync_idx = find(hs < 0.195, 1, 'first');
 h_d_log_sync_idx = find(h_d_log < 0.195, 1, 'first');
 
@@ -175,9 +175,9 @@ timeStamp_Pow = timeStamp_Pow - (h_d_log_sync_time - hs_sync_time) - 0.064 -0.05
 % ========================================================================
 % ==================== Plot Start ========================================
 % ========================================================================
-screenSize = get(0, 'ScreenSize'); % 화면 크기 가져오기
+screenSize = get(0, 'ScreenSize'); %获取屏幕尺寸
 
-% uifigure 생성 (전체 화면 크기로 설정)
+% 创建uifigure（设置为全屏尺寸）
 fig = uifigure('Name', " VICON_Filter_Comparision", 'Position', [0, 0, screenSize(3), screenSize(4)*0.97]);
 tabGroup = uitabgroup(fig, 'Position', [0, 0, fig.Position(3), fig.Position(4)]);
 

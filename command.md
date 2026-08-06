@@ -76,3 +76,14 @@ ekf      theta、theta_dot、速度、偏航角速度
 target   目标状态
 torque   左右轮计算扭矩及SAT饱和标志
 mode     STOP、COMPUTE_ONLY或RUN
+
+mainbody 301.66g
+calf link 53.55g
+active 12.24g
+passive 13.5g
+wheel 37.77g
+tire 87.2g
+wheel all 124.97g
+
+
+

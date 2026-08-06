@@ -16,15 +16,15 @@ private:
   const int CH_RESET = 5;   // Estimator Reset
 
   // Receiver data min/max
-  const int SBUS_MIN = 172;   // SBUS 최소값
-  const int SBUS_MAX = 1810;  // SBUS 최대값
+  const int SBUS_MIN = 172;   // SBUS 最小值
+  const int SBUS_MAX = 1810;  // SBUS最大
 
   bfs::SbusRx sbus_rx;
   bfs::SbusData data;
   float h_d, phi_d, v_d, dpsi_d;
 
 public:
-  // 생성자
+  // 构造函数
   Receiver(HardwareSerial& serial)
     : sbus_rx(&serial, SBUS_RX_PIN, -1, true) {
       h_d = HEIGHT_MAX;
@@ -33,12 +33,12 @@ public:
       dpsi_d = 0;
     }
 
-  // SBUS 초기화
+  // SBUS初始化
   void begin() {
     sbus_rx.Begin();
   }
 
-  // SBUS 데이터 읽기
+  // 读取SBUS数据
   bool readData() {
     return sbus_rx.Read();
   }
@@ -47,16 +47,16 @@ public:
     data = sbus_rx.data();
   }
 
-  // 상태 확인 (On/Off)
+  // 检查状态（开/关）
   bool isRun() {
-    return (data.ch[CH_ISRUN] == SBUS_MAX);  // 1810 -> On 상태
+    return (data.ch[CH_ISRUN] == SBUS_MAX);  // 分段阅读_第 1810 章
   }
 
   bool isReset() {
-    return (data.ch[CH_RESET] == SBUS_MAX);  // 1810 -> On 상태
+    return (data.ch[CH_RESET] == SBUS_MAX);  // 分段阅读_第 1810 章
   }
 
-  // 채널 데이터 가져오기
+  // 获取频道数据
   void updateDesiredStates() {
     h_d = mapToRange(data.ch[CH_HEIGHT], HEIGHT_MIN, HEIGHT_MAX);
     phi_d = mapToRange(data.ch[CH_ROLL], PHI_MIN, PHI_MAX);
@@ -91,12 +91,12 @@ public:
     Serial.print(dpsi_d);
   }
 
-  // 값 맵핑 함수
+  // 值映射函数
   float mapToRange(int value, float out_min, float out_max) {
     float scaled_value = (static_cast<float>(value) - static_cast<float>(SBUS_MIN))
                          / (static_cast<float>(SBUS_MAX) - static_cast<float>(SBUS_MIN));
     float mapped_value = scaled_value * (out_max - out_min) + out_min;
-    return mapped_value;  // 결과를 double로 반환
+    return mapped_value;  // 返回双精度结果
   }
 };
 

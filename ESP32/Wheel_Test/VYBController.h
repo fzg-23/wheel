@@ -8,37 +8,37 @@
 
 /**
  * @class VYBController
- * @brief 제어 시스템의 LQR 기반 동작을 처리하는 클래스
+ * @brief 处理控制系统基于 LQR 的行为的类。
  */
 class VYBController {
 private:
-  MGServo& ServoRW;  ///< 우측 휠 서보
-  MGServo& ServoLW;  ///< 좌측 휠 서보
+  MGServo& ServoRW;  ///< 右轮舵机
+  MGServo& ServoLW;  ///< 左轮舵机
 
-  std::vector<Eigen::Matrix<float, 2, 4>> Ks;  ///< LQR 게인 행렬들의 벡터
-  Eigen::Matrix<float, 2, 4> K;                ///< 현재 사용 중인 LQR 게인
-  Eigen::Matrix<float, 2, 1> u;                ///< 제어 입력 벡터
+  std::vector<Eigen::Matrix<float, 2, 4>> Ks;  ///< LQR 增益矩阵向量
+  Eigen::Matrix<float, 2, 4> K;                ///< 当前使用的 LQR 增益
+  Eigen::Matrix<float, 2, 1> u;                ///< 控制输入向量
 
-  float iq_factor;         ///< 전류 변환 계수 (A/LSB)
-  float torque_constant;   ///< 토크 상수 (Nm/A)
+  float iq_factor;         ///< 电流转换系数 (A/LSB)
+  float torque_constant;   ///< 扭矩常数 (Nm/A)
   float saturation;        ///< input saturation
-  const int RW_bias = 12;  ///< 우측 휠 모터의 바이어스 값
+  const int RW_bias = 12;  ///< 右轮电机偏置值
 
 public:
   /**
-   * @brief 생성자: VYBController 초기화
-   * @param ServoRW_ 우측 휠 서보 객체 참조
-   * @param ServoLW_ 좌측 휠 서보 객체 참조
+   * @brief构造函数：VYBController初始化
+   * @param ServoRW_ 右轮伺服对象引用
+   * @param ServoLW_ 左轮伺服对象的引用。
    */
   VYBController(MGServo& ServoRW_, MGServo& ServoLW_)
     : ServoRW(ServoRW_), ServoLW(ServoLW_) {
-    // 전류 및 토크 상수 초기화
+    // 初始化电流和扭矩常数
     iq_factor = 0.01611328f;  // (A/LSB) 33 / 2048
     torque_constant = 0.07f;  // (Nm/A)
     saturation = iq_factor * torque_constant * MAX_TORQUE_COMMAND;
 
 
-    // LQR 게인 초기화 (하드코딩된 데이터 삽입)
+    // 初始化LQR增益（插入硬编码数据）
     Eigen::Matrix<float, 2, 4> mat;
     //////////////////////////////////////////////////////////
     mat << 1.08462239f, 0.12305272f, 0.19382449f, -0.19479993f,
@@ -100,7 +100,7 @@ public:
   }
 
   /**
-   * @brief 현재 제어 입력 벡터를 반환
+   * @brief 返回当前控制输入向量
    * @return Eigen::Matrix<float, 2, 1> u
    */
   Eigen::Matrix<float, 2, 1> getInputVector() {
@@ -108,8 +108,8 @@ public:
   }
 
   /**
-   * @brief 모터 속도 측정을 수행하여 측정 벡터에 반영
-   * @param z 모터 속도 측정값을 저장할 벡터
+   * @brief 进行电机速度测量并将其反映在测量向量中
+   * @param z 用于存储电机速度测量值的向量。
    */
   void getMotorSpeedMeasurement(Eigen::Matrix<float, 8, 1>& z) {
     z(6) = ServoRW.getMotorSpeed() * M_PI / 180;
@@ -117,48 +117,48 @@ public:
   }
 
   /**
-  * @brief 모터 Current 측정값 update
-  * @param iq_vec 모터 current 측정값을 저장할 벡터
+  * @brief 电机电流测量值更新
+  * @param iq_vec 用于存储电机电流测量值的向量
   */
   void getMotorCurrentMeasurement(Eigen::Matrix<float, 2, 1>& iq_vec) {
     iq_vec << ServoRW.getMotorIq(), ServoLW.getMotorIq();
   }
 
   /**
-  * @brief 모터 Current raw 측정값 update
-  * @param iq_raw_vec 모터 current 측정값을 저장할 벡터
+  * @brief 电机电流原始测量值更新
+  * @param iq_raw_vec 用于存储电机电流测量值的向量
   */
   void getMotorCurrentMeasurement(Eigen::Matrix<int16_t, 2, 1>& iq_raw_vec) {
     iq_raw_vec << ServoRW.getMotorIqRaw(), ServoLW.getMotorIqRaw();
   }
 
   /**
-   * @brief 현재 높이에 따라 LQR 게인 K를 계산
-   * @param h 현재 높이 (m)
+   * @brief 根据当前高度计算LQR增益K
+   * @param h 当前高度（米）
    */
   void computeGainK(const float h) {
-    float temp = (h - HEIGHT_MIN) / 0.01;  // 구간을 10mm당 하나씩 나눔
-    int idx = static_cast<int>(temp);      // 구간의 정수 인덱스 계산
+    float temp = (h - HEIGHT_MIN) / 0.01;  // 将截面每10mm分成1段
+    int idx = static_cast<int>(temp);      // 计算区间的整数索引
 
     if (idx >= 0 && idx < static_cast<int>(Ks.size()) - 1) {
-      // 보간 비율 계산
-      float ratio = temp - idx;  // 현재 위치가 구간 내에서 차지하는 비율
+      // 插值比计算
+      float ratio = temp - idx;  // 当前位置在该部分中的比例
 
-      // 보간 수행
+      // 执行插值
       K = Ks.at(idx) * (1.0f - ratio) + Ks.at(idx + 1) * ratio;
     } else if (idx < 0) {
-      // h가 HEIGHT_MIN 이하일 경우 최소값 사용
+      // 如果 h 小于或等于 HEIGHT_MIN，则使用最小值
       K = Ks.front();
     } else {
-      // h가 범위를 벗어날 경우 최대값 사용
+      // 如果 h 超出范围，则使用最大值
       K = Ks.back();
     }
   }
 
   /**
-   * @brief 상태 벡터를 기반으로 제어 입력 벡터를 계산
-   * @param x_d 목표 상태 벡터
-   * @param x 현재 상태 벡터
+   * @brief 根据状态向量计算控制输入向量
+   * @param x_d 目标状态向量
+   * @param x 当前状态向量
    */
   void computeInput(Eigen::Matrix<float, 4, 1>& x_d, Eigen::Matrix<float, 4, 1>& x) {
     u = K * (x_d - x) / 2;
@@ -174,13 +174,13 @@ public:
   }
 
   /**
- * @brief 계산된 제어 명령을 서보에 전송
+ * @brief 将计算出的控制命令发送到伺服器
  */
   void sendControlCommand() {
     float u_RW = u(0) / (iq_factor * torque_constant);
     float u_LW = u(1) / (iq_factor * torque_constant);
 
-    // Right Wheel motor의 마찰로 인해 발생하는 torque 문제를 조정해줌
+    // 调整右轮电机摩擦引起的扭矩问题。
     if (u_RW < 0) {
       u_RW -= RW_bias;
     } else if (u_RW > 0) {
@@ -192,8 +192,8 @@ public:
   }
 
   /**
- * @brief 직접 제어 명령을 서보에 전송
- * @param iq_inputs 두 개의 바퀴에 대한 제어 신호 (Right Wheel, Left Wheel)
+ * @brief 直接向舵机传输控制命令
+ * @param iq_inputs 两个轮子的控制信号（右轮、左轮）
  */
   void sendDirectControlCommand(Eigen::Matrix<int16_t, 2, 1> iq_inputs) {
     int16_t u_RW = iq_inputs(0);

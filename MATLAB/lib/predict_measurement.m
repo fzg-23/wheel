@@ -1,5 +1,5 @@
 function [h_obs, H] = predict_measurement(f, x_pred, g, h, L, R)
-% 미리 계산된 sin과 cos
+% 预先计算的 sin 和 cos
 theta_ddot = f(2);
 v_dot = f(3);
 psi_ddot = f(4);
@@ -18,8 +18,8 @@ psi_dot = x_pred(4);
 cos_theta = cos(theta);
 sin_theta = sin(theta);
 
-% h_obs 계산
-h_obs = zeros(8, 1); % 결과를 저장할 벡터
+% h_obs计算
+h_obs = zeros(8, 1); % 用于存储结果的向量
 h_obs(1) = h * theta_ddot + v_dot * cos_theta - g * sin_theta - h * psi_dot^2 * cos_theta * sin_theta;
 h_obs(2) = psi_dot * v + h * psi_ddot * sin_theta + h * psi_dot * theta_dot * cos_theta * 2.0;
 h_obs(3) = -h * theta_dot^2 + g * cos_theta + v_dot * sin_theta - psi_dot^2 * (h - h * cos_theta^2);
@@ -29,8 +29,8 @@ h_obs(6) = psi_dot * cos_theta;
 h_obs(7) = theta_dot - v / R - (L * psi_dot) / R;
 h_obs(8) = -theta_dot + v / R - (L * psi_dot) / R;
 
-% H 행렬 계산
-H = zeros(8, 4); % 8x4 크기의 행렬
+% H矩阵计算
+H = zeros(8, 4); % 8x4矩阵
 H(1, 1) = psi_dot^2 * (h * sin_theta^2 - h * cos_theta^2) - g * cos_theta - v_dot * sin_theta;
 H(2, 1) = h * psi_ddot * cos_theta - h * psi_dot * theta_dot * sin_theta * 2.0;
 H(3, 1) = v_dot * cos_theta - g * sin_theta - h * psi_dot^2 * cos_theta * sin_theta * 2.0;

@@ -6,15 +6,15 @@
 
 class HRController {
 public:
-  // 생성자
+  // 构造函数
   HRController() {}
 
-  // 서보 핀 연결
+  // 伺服销连接
   bool begin() {
     return Wire.begin(LU9685_SDA_PIN, LU9685_SCL_PIN, 100000);
   }
 
-  // 서보 각도 설정
+  // 舵机角度设定
   void controlHipServos(const Eigen::Vector2f theta_hips_) {
     theta_hips = theta_hips_;
 
@@ -33,7 +33,7 @@ public:
   }
 
 private:
-  // 서보 각도 범위
+  // 伺服角度范围
   const int LH_SERVO_MIN = 88;
   const int LH_SERVO_MAX = 171;
   const int LH_SERVO_C = 101;

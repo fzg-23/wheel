@@ -2,7 +2,7 @@ function [timeStamp, x_trues, hs] = extract_truestates_from_VICON(rawData, FPS, 
     r = 0.072; % wheel radius
     floor_z = -0.004;
     
-    % 4행부터 데이터를 숫자 행렬로 변환
+    % 从第 4 行开始，将数据转换为数值矩阵。
     data = cell2mat(rawData(4:end, [1,3:end]));
     data_len = size(data,1);
 

@@ -1,5 +1,5 @@
 clc; clear;
-% delete(findall(0, 'Type', 'figure')); % 이렇게 해야 uifigure가 제거됨
+% 删除(findall(0, '类型', '数字')); % 这将删除 uifigure
 format long;
 
 addpath("lib\");
@@ -7,8 +7,8 @@ addpath("log_plot\");
 load('dynamic_properties.mat');
 load('dynamics_functions.mat');
 
-% CSV 파일 읽기
-filename = '20250112_logdata_EKF_LowGain_withaccLPF_VICON_005.csv'; % CSV 파일 이름
+% 读取 CSV 文件
+filename = '20250112_logdata_EKF_LowGain_withaccLPF_VICON_005.csv'; % CSV 文件名
 
 data = readtable(filename);
 
@@ -110,9 +110,9 @@ end
 % ========================================================================
 % ==================== Plot Start ========================================
 % ========================================================================
-screenSize = get(0, 'ScreenSize'); % 화면 크기 가져오기
+screenSize = get(0, 'ScreenSize'); %获取屏幕尺寸
 
-% uifigure 생성 (전체 화면 크기로 설정)
+% 创建uifigure（设置为全屏尺寸）
 fig = uifigure('Name', filename + "/ Filter_Test_Revised", 'Position', [0, 0, screenSize(3), screenSize(4)*0.97]);
 tabGroup = uitabgroup(fig, 'Position', [0, 0, fig.Position(3), fig.Position(4)]);
 

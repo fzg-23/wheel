@@ -7,16 +7,16 @@
 
 class HRController {
 public:
-  // 생성자
+  // 构造函数
   HRController() {}
 
-  // 서보 핀 연결
+  // 伺服销连接
   void attachServos(int left_pin, int right_pin) {
     left_servo.attach(left_pin);
     right_servo.attach(right_pin);
   }
 
-  // 서보 각도 설정
+  // 舵机角度设定
   void controlHipServos(const Eigen::Vector2f theta_hips_) {
     theta_hips = theta_hips_;
 
@@ -35,14 +35,14 @@ public:
   }
 
 private:
-  // 서보 각도 범위
-  const int LH_SERVO_MIN = 62;   // 왼쪽 서보 최소각도
-  const int LH_SERVO_MAX = 162;  // 왼쪽 서보 최대각도
-  const int LH_SERVO_C = 92;     // 왼쪽 서보 중앙값
+  //伺服角度范围
+  const int LH_SERVO_MIN = 62;   // 左舵机最小角度
+  const int LH_SERVO_MAX = 162;  // 左舵机最大角度
+  const int LH_SERVO_C = 92;     // 左伺服中位
 
-  const int RH_SERVO_MIN = 18;   // 오른쪽 서보 최소각도
-  const int RH_SERVO_MAX = 118;  // 오른쪽 서보 최대각도
-  const int RH_SERVO_C = 88;     // 오른쪽 서보 중앙값
+  const int RH_SERVO_MIN = 18;   // 右舵机最小角度
+  const int RH_SERVO_MAX = 118;  // 右舵机最大角度
+  const int RH_SERVO_C = 88;     // 右伺服中值
 
   Servo left_servo;
   Servo right_servo;

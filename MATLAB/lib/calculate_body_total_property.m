@@ -1,5 +1,5 @@
 function [mass_total, r_total, I_total] = calculate_body_total_property(h, phi, properties)
-% 주어진 height과 roll angle에 대해서, system의 Inertia tensor를 계산한다. 이때 frame과 중심은 IMU를 기준으로 한다.
+% 对于给定的高度和滚动角，计算系统的惯性张量。此时的框架和中心都是基于IMU的。
 theta_hips = solve_inverse_kinematics(h, phi, properties);
 
 % Extract properties

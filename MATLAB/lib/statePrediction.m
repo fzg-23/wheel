@@ -1,13 +1,13 @@
 function [x_pred, F] = statePrediction(x, u, dt)
-% 비선형 상태 방정식 (예시)
+% 非线性状态方程（示例）
 f = @(x, u) [x(2) + dt * x(3);
-    -sin(x(1)) + u(1);  % 예시 동역학
-    cos(x(1)) * u(2);   % 예시 동역학
+    -sin(x(1)) + u(1);  %动态示例
+    cos(x(1)) * u(2);   %动态示例
     x(4)];
 
-% 상태 예측
+% 状态预测
 x_pred = f(x, u);
 
-% Jacobian 행렬 계산 (선형화)
-F = jacobianState(x, u, dt); % Jacobian 행렬을 계산하는 함수
+% 雅可比矩阵计算（线性化）
+F = jacobianState(x, u, dt); % 计算雅可比矩阵的函数
 end

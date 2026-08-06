@@ -9,7 +9,7 @@
 #include "Timer.h"
 
 
-// Properties와 Receiver, Controller 초기화
+// 初始化属性、接收器和控制器
 const Properties properties = createDefaultProperties();
 POL Pol(properties);
 HardwareSerial RS485(1);
@@ -43,76 +43,76 @@ void serialPrintStates();
 
 void setup() {
   // ================================
-  // Command 벡터 초기화
+  // 命令向量初始化
   // ================================
   for (int16_t command = command_increment; command < command_max; command += command_increment) {
-    command_vec.push_back(command);   // 명령 벡터에 양수 값 추가
-    command_vec.push_back(-command);  // 명령 벡터에 음수 값 추가
+    command_vec.push_back(command);   // 将正值添加到命令向量
+    command_vec.push_back(-command);  // 将负值添加到命令向量
   }
 
   // ================================
-  // 시리얼 통신, 리시버, 서보 컨트롤러 초기화
+  // 串行通信、接收器和伺服控制器初始化
   // ================================
-  Serial.begin(115200);                        // 시리얼 통신 시작
-  receiver.begin();                            // 리시버 시작
-  HR_controller.attachServos(LH_PIN, RH_PIN);  // 서보 핀 설정
+  Serial.begin(115200);                        // 开始串行通信
+  receiver.begin();                            //启动接收器
+  HR_controller.attachServos(LH_PIN, RH_PIN);  // 伺服引脚设置
 
   // ================================
-  // IMU(MPU6050) 초기화
+  //IMU（MPU6050）初始化
   // ================================
   if (!MPU6050.begin()) {
     Serial.println("[ERROR] Fail to initialize IMU.");
   }
 
   // ================================
-  // RS485 초기화
+  // RS485初始化
   // ================================
-  pinMode(RS485_DE_RE, OUTPUT);    // RS485 방향 제어 핀 설정
-  digitalWrite(RS485_DE_RE, LOW);  // RS485 수신 모드 설정
-  RS485.begin(460800, SERIAL_8N1, RS485_RX_PIN, RS485_TX_PIN);  // RS485 통신 시작
+  pinMode(RS485_DE_RE, OUTPUT);    // RS485方向控制引脚设置
+  digitalWrite(RS485_DE_RE, LOW);  // RS485接收模式设置
+  RS485.begin(460800, SERIAL_8N1, RS485_RX_PIN, RS485_TX_PIN);  // 启动RS485通讯
 
   // ================================
-  // WIFI 연결 설정
+  // WIFI连接设置
   // ================================
-  WIFI_Logger.begin();  // WIFI 연결 초기화
+  WIFI_Logger.begin();  // 重置WIFI连接
 
   // ================================
-  // PSRAM 상태 확인 및 초기화
+  // 检查PSRAM状态并初始化
   // ================================
   if (psramFound()) {
     Serial.println("PSRAM available.");
     if (!psramInit()) {
       Serial.println("PSRAM initialization failed!");
-      while (1) {}  // 초기화 실패 시 무한 루프
+      while (1) {}  // 初始化失败时无限循环
     } else {
       Serial.println("PSRAM initialized successfully!");
     }
-    Serial.printf("PSRAM size: %d bytes\n", ESP.getPsramSize());  // PSRAM 크기 출력
+    Serial.printf("PSRAM size: %d bytes\n", ESP.getPsramSize());  // PSRAM 大小输出
   } else {
     Serial.println("PSRAM not available.");
-    while (1) {}  // PSRAM 미탐지 시 무한 루프
+    while (1) {}  //未检测到 PSRAM 时无限循环
   }
 
   // ================================
-  // SBUS 데이터 수신 대기 (타임아웃 처리)
+  // 等待接收SBUS数据（超时处理）
   // ================================
   Timer receiver_timer(Timer::TimerType::Millis);
   receiver_timer.start();
-  const unsigned long timeout = 5000;  // 타임아웃 5초 설정
+  const unsigned long timeout = 5000;  // 将超时设置为 5 秒
 
   while (!receiver.readData()) {
     if (receiver_timer.getDuration() > timeout) {
       Serial.println("Timeout: No data received from SBUS.");
-      receiver_timer.start();  // 타임아웃 초기화
+      receiver_timer.start();  // 重置超时
     }
   }
-  receiver.updateData();  // 데이터 업데이트
+  receiver.updateData();  // 数据更新
 
   // ================================
   // Logger pre-allocation
   // ================================
   WIFI_Logger.readyToLogValue("cal_time");
-  WIFI_Logger.readyToLogTimeStamp();            // 시간 기록
+  WIFI_Logger.readyToLogTimeStamp();            //时间记录
   WIFI_Logger.readyToLogValue("h_d");           // (m)
   WIFI_Logger.readyToLogValue("tau_RW");        // (LSD)
   WIFI_Logger.readyToLogValue("tau_LW");        // (LSD)
@@ -130,7 +130,7 @@ void setup() {
 
 
   // ================================
-  // 시간 측정 시작
+  // 开始测量时间
   // ================================
   log_timer.start();
   sampling_timer.start();
@@ -138,14 +138,14 @@ void setup() {
 
 
 void loop() {
-  // sampling time이 경과했을 때만 실행
+  // 仅当采样时间结束时执行
   if (sampling_timer.getDuration() >= dt * 1000) {
-    // 경과 시간 출력
+    // 经过时间输出
     Serial.print("SamplingTime(ms):");
     Serial.print(sampling_timer.getDuration());
     Serial.print(" ");
 
-    sampling_timer.start();  // sampling timer 초기화
+    sampling_timer.start();  // 初始化采样定时器
 
 
     if (receiver.readData()) {
@@ -201,8 +201,8 @@ void loop() {
       WIFI_Logger.logValue("cal_time", sampling_timer.getDuration());
 
       // temp_timer.start();
-      WIFI_Logger.logTimeStamp(log_timer.getDuration());  // 시간 기록
-      // state 기록
+      WIFI_Logger.logTimeStamp(log_timer.getDuration());  //时间记录
+      // 国家记录
       WIFI_Logger.logValue("h_d", h_d);  // (m)
 
       WIFI_Logger.logValue("tau_RW", iq_inputs(0));  // (LSD)
@@ -241,7 +241,7 @@ void loop() {
       VYB_controller.getMotorSpeedMeasurement(z);
       VYB_controller.getMotorCurrentMeasurement(iq_outputs);
 
-      WIFI_Logger.handleClientRequests();  // Log Data 전송
+      WIFI_Logger.handleClientRequests();  // 日志数据传输
 
       Serial.println(" Off Mode");
     }

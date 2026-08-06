@@ -4,64 +4,64 @@
 #include <math.h>
 #include <ArduinoEigenDense.h>
 
-// 단위 변환 매크로 함수
+// 单位转换宏功能
 #define MM_TO_M(mm) ((mm)*1e-3)
 #define G_TO_KG(g) ((g)*1e-3)
 #define GMM2_TO_KGM2(gmm2) ((gmm2)*1e-9)
 
-// 핀 번호 정의
-#define LH_PIN 13  // 왼쪽 서보 핀
-#define RH_PIN 21  // 오른쪽 서보 핀
+// 引脚号定义
+#define LH_PIN 13  // 左伺服销
+#define RH_PIN 21  // 右伺服销
 
-#define SBUS_RX_PIN 15  // SBUS 수신 핀
+#define SBUS_RX_PIN 15  // SBUS接收引脚
 
-#define RS485_DE_RE 1    // DE/RE 제어 핀
-#define RS485_TX_PIN 40  // DI (TX) 핀
-#define RS485_RX_PIN 42  // RO (RX) 핀
+#define RS485_DE_RE 1    // DE/RE 控制引脚
+#define RS485_TX_PIN 40  // DI (TX) 引脚
+#define RS485_RX_PIN 42  // RO (RX) 引脚
 
-#define SDA_PIN 8   // SDA MPU6050 핀
-#define SCL_PIN 17  // SCL MPU6050 핀
+#define SDA_PIN 8   // SDA MPU6050引脚
+#define SCL_PIN 17  //SCL MPU6050引脚
 
-// 범위 설정 (height와 phi)
-const float HEIGHT_MIN = 0.07;  // 최소 높이 (m)
-const float HEIGHT_MAX = 0.2;   // 최대 높이 (m)
+// 范围设置（高度和 phi）
+const float HEIGHT_MIN = 0.07;  // 最低高度（米）
+const float HEIGHT_MAX = 0.2;   // 最大高度（米）
 
-const float PHI_MIN = -30.0;  // phi 최소값 (degree)
-const float PHI_MAX = 30.0;   // phi 최대값 (degree)
+const float PHI_MIN = -30.0;  // phi最小值（度）
+const float PHI_MAX = 30.0;   // phi 最大值（度）
 
-const float VEL_MAX = 1;  // 최대 속도 (m/s)
-const float YAW_MAX = 1.5;  // 최대 yaw angular velocity (rad/s)
+const float VEL_MAX = 1;  // 最大速度（米/秒）
+const float YAW_MAX = 1.5;  // 最大偏航角速度（rad/s）
 
-const float MAX_TORQUE_COMMAND = 100.000;  // 최대 torque command
+const float MAX_TORQUE_COMMAND = 100.000;  //最大扭矩指令
 
-// 핫스팟 정보 입력 -> 정보만 입력하면 와이파이 연결 된다.
-// const char* ssid = "Jeongbin";       // 핫스팟 이름
-// const char* password = "james0928";  // 핫스팟 비밀번호
-// const char* ssid = "Woodaengtang";       // 핫스팟 이름
-// const char* password = "jonghyun1234";  // 핫스팟 비밀번호
-const char* ssid = "OSB";       // 핫스팟 이름
-const char* password = "12345678";  // 핫스팟 비밀번호
+// 输入热点信息->只需输入信息即可连接Wi-Fi。
+// const char* ssid = "正彬";       // 热点名称
+//const char* 密码 = "james0928";  // 热点密码
+// const char* ssid = "Woodaengtang";       // 热点名称
+// const char* 密码 = "jonghyun1234";  // 热点密码
+const char* ssid = "OSB";       // 热点名称
+const char* password = "12345678";  // 热点密码
 
 
 const float dt = 0.003;  // sampling time
 
-// mm -> m 단위 변환 함수 (벡터)
+// mm -> m 单位转换函数（向量）
 template<typename T>
 Eigen::Matrix<T, 3, 1> mmToMVector(const Eigen::Matrix<T, 3, 1>& vec) {
   return vec * static_cast<T>(1e-3);
 }
 
-// gmm^2 -> kgm^2 단위 변환 함수 (행렬)
+// gmm^2 -> kgm^2 单位转换函数（矩阵）
 template<typename T>
 Eigen::Matrix<T, 3, 3> gmm2ToKgm2Matrix(const Eigen::Matrix<T, 3, 3>& mat) {
   return mat * static_cast<T>(1e-9);
 }
 
-// Properties 구조체 정의
+// 属性结构定义
 struct Properties {
   float a, b, l1, l2, l3, l4, l5, L, R;
 
-  // 관성 및 질량 관련 변수들
+  // 惯性和质量相关变量
   float m_Body;
   Eigen::Matrix<float, 3, 1> CoM_Body;
   Eigen::Matrix<float, 3, 3> I_Body;
@@ -99,7 +99,7 @@ struct Properties {
   Eigen::Matrix<float, 3, 3> I_LW;
 };
 
-// Properties 기본값 설정 함수
+// 属性默认设置功能
 inline Properties createDefaultProperties() {
   Properties props = {
     0.075 * cos(M_PI / 6.0),  // a
@@ -114,7 +114,7 @@ inline Properties createDefaultProperties() {
   };
 
   // Mainbody
-  props.m_Body = G_TO_KG(1414.04421338f);  // G_TO_KG 함수에서 반환값이 float인 경우 f를 추가
+  props.m_Body = G_TO_KG(1414.04421338f);  // 如果 G_TO_KG 函数中的返回值为浮点型，则添加 f。
   props.CoM_Body = mmToMVector(Eigen::Matrix<float, 3, 1>(18.19659659f, -0.24888409f, 35.42269696f));
   props.I_Body = gmm2ToKgm2Matrix((Eigen::Matrix<float, 3, 3>() << 4191453.72496564f, 19611.02661734f, 183001.27422549f,
                                    19611.02661734f, 6619178.75424983f, 6399.95018693f,

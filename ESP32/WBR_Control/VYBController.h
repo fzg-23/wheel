@@ -9,12 +9,12 @@
 
 /**
  * @class VYBController
- * @brief 제어 시스템의 LQR 기반 동작을 처리하는 클래스
+ * @brief 处理控制系统基于 LQR 的行为的类。
  */
 class VYBController {
 private:
-  MGServo& ServoRW;  ///< 우측 휠 서보
-  MGServo& ServoLW;  ///< 좌측 휠 서보
+  MGServo& ServoRW;  ///< 右轮舵机
+  MGServo& ServoLW;  ///< 左轮舵机
 
   std::vector<Eigen::Matrix<float, 2, 4>> Ks;  ///增益表
   Eigen::Matrix<float, 2, 4> K;                ///当前选中增益
@@ -35,14 +35,14 @@ private:
 public:
   float theta_d;
   /**
-   * @brief 생성자: VYBController 초기화
-   * @param ServoRW_ 우측 휠 서보 객체 참조
-   * @param ServoLW_ 좌측 휠 서보 객체 참조
+   * @brief构造函数：VYBController初始化
+   * @param ServoRW_ 右轮伺服对象引用
+   * @param ServoLW_ 左轮伺服对象的引用。
    */
   VYBController(MGServo& ServoRW_, MGServo& ServoLW_)
     : ServoRW(ServoRW_), ServoLW(ServoLW_) {
     theta_d = 0.f;
-    // 전류 및 토크 상수 초기화
+    // 初始化电流和扭矩常数
     iq_factor = 0.001611328f;  // (A/LSB) 3.3 / 2048
     torque_constant = 0.7f;    // (Nm/A) * reduction ratio
     saturation = iq_factor * torque_constant * MAX_TORQUE_COMMAND;
@@ -53,8 +53,9 @@ public:
 
 
 
-    // 加载LQR增益表
+    // 原 LQR 增益表（保留供回退，不参与编译）
     Eigen::Matrix<float, 2, 4> mat;
+#if 0
     //////////////////////////////////////////////////////////
     mat << 1.35316904f, 0.14009245f, 0.23358589f, -0.12161902f,
       -1.36517013f, -0.14243867f, -0.23405192f, -0.12179830f;
@@ -111,11 +112,70 @@ public:
     mat << 1.84334794f, 0.22799757f, 0.23592427f, -0.12117958f,
       -1.86174765f, -0.23228239f, -0.23624048f, -0.12157472f;
     Ks.push_back(mat);
+#endif
+
+    // 当前 LQR 增益表：m_Body=948.127 g，h=0.07:0.01:0.20 m，Ts=0.008 s
+    // Q=diag([100, 0, 20, 5])，R=diag([150, 150])
+    mat << 1.06669590f, 0.11065670f, 0.23233587f, -0.11821313f,
+      -1.06761043f, -0.11154472f, -0.23172512f, -0.11892476f;
+    Ks.push_back(mat);
+
+    mat << 1.10137033f, 0.11604147f, 0.23249065f, -0.11824224f,
+      -1.10227047f, -0.11692886f, -0.23188677f, -0.11893595f;
+    Ks.push_back(mat);
+
+    mat << 1.13518804f, 0.12155486f, 0.23266869f, -0.11825619f,
+      -1.13608751f, -0.12245005f, -0.23206850f, -0.11893815f;
+    Ks.push_back(mat);
+
+    mat << 1.16797418f, 0.12717946f, 0.23286789f, -0.11825915f,
+      -1.16888007f, -0.12808539f, -0.23227121f, -0.11893132f;
+    Ks.push_back(mat);
+
+    mat << 1.19971506f, 0.13290032f, 0.23308362f, -0.11825186f,
+      -1.20063316f, -0.13381866f, -0.23249101f, -0.11891523f;
+    Ks.push_back(mat);
+
+    mat << 1.23044791f, 0.13870439f, 0.23331115f, -0.11823463f,
+      -1.23138390f, -0.13963663f, -0.23272330f, -0.11888991f;
+    Ks.push_back(mat);
+
+    mat << 1.26022866f, 0.14458059f, 0.23354631f, -0.11820790f,
+      -1.26118836f, -0.14552840f, -0.23296382f, -0.11885584f;
+    Ks.push_back(mat);
+
+    mat << 1.28911889f, 0.15051980f, 0.23378573f, -0.11817244f,
+      -1.29010822f, -0.15148514f, -0.23320894f, -0.11881394f;
+    Ks.push_back(mat);
+
+    mat << 1.31717975f, 0.15651481f, 0.23402684f, -0.11812937f,
+      -1.31820460f, -0.15750006f, -0.23345573f, -0.11876554f;
+    Ks.push_back(mat);
+
+    mat << 1.34446908f, 0.16256046f, 0.23426785f, -0.11808004f,
+      -1.34553522f, -0.16356845f, -0.23370196f, -0.11871227f;
+    Ks.push_back(mat);
+
+    mat << 1.37104064f, 0.16865384f, 0.23450773f, -0.11802594f,
+      -1.37215362f, -0.16968797f, -0.23394605f, -0.11865598f;
+    Ks.push_back(mat);
+
+    mat << 1.39694591f, 0.17479501f, 0.23474614f, -0.11796877f,
+      -1.39811100f, -0.17585935f, -0.23418700f, -0.11859884f;
+    Ks.push_back(mat);
+
+    mat << 1.42224188f, 0.18098861f, 0.23498344f, -0.11791125f,
+      -1.42346352f, -0.18208796f, -0.23442430f, -0.11854408f;
+    Ks.push_back(mat);
+
+    mat << 1.44701623f, 0.18724797f, 0.23522056f, -0.11786094f,
+      -1.44829559f, -0.18838740f, -0.23465749f, -0.11849987f;
+    Ks.push_back(mat);
     /////////////////////////////////////////////////////////////////
   }
 
   /**
-   * @brief 현재 제어 입력 벡터를 반환
+   * @brief 返回当前控制输入向量
    * @return Eigen::Matrix<float, 2, 1> u
    */
   Eigen::Matrix<float, 2, 1> getInputVector() {
@@ -123,8 +183,8 @@ public:
   }
 
   /**
-   * @brief 모터 속도 측정을 수행하여 측정 벡터에 반영
-   * @param z 모터 속도 측정값을 저장할 벡터
+   * @brief 进行电机速度测量并将其反映在测量向量中
+   * @param z 用于存储电机速度测量值的向量。
    */
   //读取左右电机速度，送入EKF
   void getMotorSpeedMeasurement(Eigen::Matrix<float, 8, 1>& z) {
@@ -133,8 +193,8 @@ public:
   }
 
   /**
-  * @brief 모터 Current 측정값 update
-  * @param iq_vec 모터 current 측정값을 저장할 벡터
+  * @brief 电机电流测量值更新
+  * @param iq_vec 用于存储电机电流测量值的向量
   */
  //读取电机电流
   void getMotorCurrentMeasurement(Eigen::Matrix<float, 2, 1>& iq_vec) {
@@ -142,8 +202,8 @@ public:
   }
 
   /**
-   * @brief 현재 높이에 따라 LQR 게인 K를 계산
-   * @param h 현재 높이 (m)
+   * @brief 根据当前高度计算LQR增益K
+   * @param h 当前高度（米）
    */
   //根据当前高度计算LQR增益K
   void computeGainK(const float h) {
@@ -166,9 +226,9 @@ public:
   }
 
   /**
-   * @brief 상태 벡터를 기반으로 제어 입력 벡터를 계산
-   * @param x_d 목표 상태 벡터
-   * @param x 현재 상태 벡터
+   * @brief 根据状态向量计算控制输入向量
+   * @param x_d 目标状态向量
+   * @param x 当前状态向量
    */
   void computeInput(Eigen::Matrix<float, 4, 1>& x_d, Eigen::Matrix<float, 4, 1>& x) {
 
@@ -200,14 +260,14 @@ public:
   }
 
   /**
-   * @brief 계산된 제어 명령을 서보에 전송
+   * @brief 将计算出的控制命令发送到伺服器
    */
     //发送平衡控制指令
   void sendControlCommand() {
     // float u_RW = u(0) / (iq_factor * torque_constant);
     // float u_LW = u(1) / (iq_factor * torque_constant);
 
-    // // Right Wheel motor의 마찰로 인해 발생하는 torque 문제를 조정해줌
+    //// 调整右轮电机摩擦引起的扭矩问题
     // if (u_RW < 0) {
     //   u_RW -= RW_bias;
     // } else if (u_RW > 0) {
@@ -225,7 +285,7 @@ public:
     float u_RW = u_(0) / (iq_factor * torque_constant);
     float u_LW = u_(1) / (iq_factor * torque_constant);
 
-    // Right Wheel motor의 마찰로 인해 발생하는 torque 문제를 조정해줌
+    // 调整右轮电机摩擦引起的扭矩问题。
     if (u_RW < 0) {
       u_RW -= RW_bias;
     } else if (u_RW > 0) {

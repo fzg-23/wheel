@@ -4,16 +4,16 @@
 #include <math.h>
 #include <ArduinoEigenDense.h>
 
-// 단위 변환 매크로 함수
+//单位转换宏功能
 #define MM_TO_M(mm) ((mm)*1e-3)
 #define G_TO_KG(g) ((g)*1e-3)
 #define GMM2_TO_KGM2(gmm2) ((gmm2)*1e-9)
 
-// BaudRate 설정
-#define RS485_BAUDRATE 460800  // Motor와 같이 맞춰줘야함
+// 波特率设置
+#define RS485_BAUDRATE 460800  //必须与电机配套
 #define SERIAL_BAUDRATE 115200
 
-// 핀 번호 정의
+//引脚号定义
 #define LU9685_SDA_PIN 8
 #define LU9685_SCL_PIN 9
 #define LU9685_ADDRESS 0x00
@@ -34,52 +34,52 @@
 #define SDA_PIN 10  // SDA MPU6050 pin
 #define SCL_PIN 11  // SCL MPU6050 pin
 
-// 범위 설정 (height와 phi)
-const float HEIGHT_MIN = 0.07;  // 최소 높이 (m)
-const float HEIGHT_MAX = 0.2;   // 최대 높이 (m)
+// 范围设置（高度和 phi）
+const float HEIGHT_MIN = 0.07;  // 最低高度（米）
+const float HEIGHT_MAX = 0.2;   // 最大高度（米）
 
-const float PHI_MIN = -15.0;  // phi 최소값 (degree)
-const float PHI_MAX = 15.0;   // phi 최대값 (degree)
+const float PHI_MIN = -15.0;  // phi最小值（度）
+const float PHI_MAX = 15.0;   // phi 最大值（度）
 
-const float VEL_MAX = 1;     // 최대 속도 (m/s)
-const float YAW_MAX = 1;  // 최대 yaw angular velocity (rad/s)
+const float VEL_MAX = 1;     // 最大速度（米/秒）
+const float YAW_MAX = 1;  // 最大偏航角速度（rad/s）
 
-const float MAX_TORQUE_COMMAND = 100.000;  // 최대 torque command
-// const float MAX_TORQUE = 0.12f;  // 최대 torque command
-// const float MAX_TORQUE = 0.48f;  // 최대 torque command
-const float MAX_TORQUE = 0.75f;  // 최대 torque command
+const float MAX_TORQUE_COMMAND = 100.000;  // 最大扭矩指令
+// 常量浮点数 MAX_TORQUE = 0.12f；  // 最大扭矩指令
+// 常量浮点数 MAX_TORQUE = 0.48f；  // 最大扭矩指令
+const float MAX_TORQUE = 0.75f;  // 最大扭矩指令
 
 
-// 핫스팟 정보 입력 -> 정보만 입력하면 와이파이 연결 된다.
-// const char* ssid = "Jeongbin";       // 핫스팟 이름
-// const char* password = "james0928";  // 핫스팟 비밀번호
-// const char* ssid = "Woodaengtang";       // 핫스팟 이름
-// const char* password = "jonghyun1234";  // 핫스팟 비밀번호
+// 输入热点信息->只需输入信息即可连接Wi-Fi。
+// const char* ssid = "正彬";       // 热点名称
+// const char* 密码 = "james0928";  // 热点密码
+// const char* ssid = "Woodaengtang";       // 热点名称
+//const char* 密码 = "jonghyun1234";  // 热点密码
 
-const char* ssid = "OSB";           // 핫스팟 이름
-const char* password = "12345678";  // 핫스팟 비밀번호
+const char* ssid = "OSB";           // 热点名称
+const char* password = "12345678";  // 热点密码
 
 const float dt = 0.008;  // sampling time
 // const float dt = 0.007;  // sampling time
 
 
-// mm -> m 단위 변환 함수 (벡터)
+// mm -> m 单位转换函数（向量）
 template<typename T>
 Eigen::Matrix<T, 3, 1> mmToMVector(const Eigen::Matrix<T, 3, 1>& vec) {
   return vec * static_cast<T>(1e-3);
 }
 
-// gmm^2 -> kgm^2 단위 변환 함수 (행렬)
+// gmm^2 -> kgm^2 单位转换函数（矩阵）
 template<typename T>
 Eigen::Matrix<T, 3, 3> gmm2ToKgm2Matrix(const Eigen::Matrix<T, 3, 3>& mat) {
   return mat * static_cast<T>(1e-9);
 }
 
-// Properties 구조체 정의
+// 属性结构定义
 struct Properties {
   float a, b, l1, l2, l3, l4, l5, L, R;
 
-  // 관성 및 질량 관련 변수들
+  // 惯性和质量相关变量
   float m_Body;
   Eigen::Matrix<float, 3, 1> CoM_Body;
   Eigen::Matrix<float, 3, 3> I_Body;
@@ -117,7 +117,7 @@ struct Properties {
   Eigen::Matrix<float, 3, 3> I_LW;
 };
 
-// Properties 기본값 설정 함수
+// 属性默认设置功能
 inline Properties createDefaultProperties() {
   Properties props = {
     0.075 * cos(M_PI / 6.0),  // a
@@ -131,14 +131,16 @@ inline Properties createDefaultProperties() {
     0.0725                    // R
   };
 
+  // 原动力学参数（保留供回退，不参与编译）
+#if 0
   // Mainbody
-  // props.m_Body = G_TO_KG(1524.76209213f);  // G_TO_KG 함수에서 반환값이 float인 경우 f를 추가
+  // props.m_Body = G_TO_KG(1524.76209213f);  // 如果G_TO_KG函数中的返回值为浮点数，则添加f
   // props.CoM_Body = mmToMVector(Eigen::Matrix<float, 3, 1>(10.81299751f, -0.19574788f, 36.74451323f));
   // props.I_Body = gmm2ToKgm2Matrix((Eigen::Matrix<float, 3, 3>() << 4221074.20231635f, 26062.23004946f, 277168.19335956f,
   //                          26062.23004946f, 7437280.54727470f, 6416.10856472f,
   //                          277168.19335956f, 6416.10856472f, 8509987.98611482f)
   //                                   .finished());
-  props.m_Body = G_TO_KG(1524.76209213f);  // G_TO_KG 함수에서 반환값이 float인 경우 f를 추가
+  props.m_Body = G_TO_KG(1524.76209213f);  // 如果 G_TO_KG 函数中的返回值为浮点型，则添加 f。
   props.CoM_Body = mmToMVector(Eigen::Matrix<float, 3, 1>(13.71923256f, -0.22808627f, 34.91864017f));
   props.I_Body = gmm2ToKgm2Matrix((Eigen::Matrix<float, 3, 3>() << 4274811.10362144f, 21823.60087554f, 202865.50474913f,
                                    21823.60087554f, 7103674.50655196f, 7275.19023018f,
@@ -213,6 +215,80 @@ inline Properties createDefaultProperties() {
   props.I_RW = gmm2ToKgm2Matrix((Eigen::Matrix<float, 3, 3>() << 312911.58508430f, -0.00692278f, -0.00051598f,
                                  -0.00692278f, 598903.10955900f, 0.00005987f,
                                  -0.00051598f, 0.00005987f, 312911.64073952f)
+                                  .finished());
+#endif
+
+  // 新动力学参数：/home/fzg/桌面/param(1).md
+  // Mainbody
+  props.m_Body = G_TO_KG(948.127f);
+  props.CoM_Body = mmToMVector(Eigen::Matrix<float, 3, 1>(15.484f, -0.147f, 34.389f));
+  props.I_Body = gmm2ToKgm2Matrix((Eigen::Matrix<float, 3, 3>() << 2636000.0f, 4369.971f, 70032.962f,
+                                   4369.971f, 4630000.0f, 3016.742f,
+                                   70032.962f, 3016.742f, 5330000.0f)
+                                    .finished());
+
+  // Calf Link Left
+  props.m_CL = G_TO_KG(341.503f);
+  props.CoM_CL = mmToMVector(Eigen::Matrix<float, 3, 1>(176.363988f, -2.977000f, 6.498837f));
+  props.I_CL = gmm2ToKgm2Matrix((Eigen::Matrix<float, 3, 3>() << 88801.584f, -5916.959f, -17279.432f,
+                                 -5916.959f, 516300.000f, -256.839f,
+                                 -17279.432f, -256.839f, 491998.416f)
+                                  .finished());
+
+  // Calf Link Right
+  props.m_CR = G_TO_KG(341.503f);
+  props.CoM_CR = mmToMVector(Eigen::Matrix<float, 3, 1>(168.662856f, 3.578000f, 6.154992f));
+  props.I_CR = gmm2ToKgm2Matrix((Eigen::Matrix<float, 3, 3>() << 106143.753f, 8301.241f, -32322.310f,
+                                 8301.241f, 895700.000f, 350.165f,
+                                 -32322.310f, 350.165f, 864256.247f)
+                                  .finished());
+
+  // Thigh Link Active Left
+  props.m_TAL = G_TO_KG(19.091f);
+  props.CoM_TAL = mmToMVector(Eigen::Matrix<float, 3, 1>(-40.856192f, 3.532000f, 3.316360f));
+  props.I_TAL = gmm2ToKgm2Matrix((Eigen::Matrix<float, 3, 3>() << 2861.914f, 3470.281f, -126.016f,
+                                  3470.281f, 20707.064f, 223.834f,
+                                  -126.016f, 223.834f, 21158.111f)
+                                   .finished());
+
+  // Thigh Link Active Right
+  props.m_TAR = G_TO_KG(19.091f);
+  props.CoM_TAR = mmToMVector(Eigen::Matrix<float, 3, 1>(-40.856192f, -3.532000f, 3.316360f));
+  props.I_TAR = gmm2ToKgm2Matrix((Eigen::Matrix<float, 3, 3>() << 2861.914f, -3470.281f, -126.018f,
+                                  -3470.281f, 20707.060f, -223.833f,
+                                  -126.018f, -223.833f, 21158.106f)
+                                   .finished());
+
+  // Thigh Link Passive Left
+  props.m_TPL = G_TO_KG(19.314f);
+  props.CoM_TPL = mmToMVector(Eigen::Matrix<float, 3, 1>(-63.299815f, 9.192000f, -5.740369f));
+  props.I_TPL = gmm2ToKgm2Matrix((Eigen::Matrix<float, 3, 3>() << 3042.430f, 3456.981f, 90.386f,
+                                  3456.981f, 32115.604f, -461.757f,
+                                  90.386f, -461.757f, 32052.001f)
+                                   .finished());
+
+  // Thigh Link Passive Right
+  props.m_TPR = G_TO_KG(19.314f);
+  props.CoM_TPR = mmToMVector(Eigen::Matrix<float, 3, 1>(-63.299815f, -9.192000f, -5.740369f));
+  props.I_TPR = gmm2ToKgm2Matrix((Eigen::Matrix<float, 3, 3>() << 3042.430f, -3456.981f, 90.386f,
+                                  -3456.981f, 32115.604f, 461.757f,
+                                  90.386f, 461.757f, 32052.001f)
+                                   .finished());
+
+  // Wheel Left
+  props.m_LW = G_TO_KG(126.059f);
+  props.CoM_LW = mmToMVector(Eigen::Matrix<float, 3, 1>(0.0f, 0.537f, 0.0f));
+  props.I_LW = gmm2ToKgm2Matrix((Eigen::Matrix<float, 3, 3>() << 177500.0f, 0.0f, 0.0f,
+                                 0.0f, 339000.0f, 0.0f,
+                                 0.0f, 0.0f, 177500.0f)
+                                  .finished());
+
+  // Wheel Right
+  props.m_RW = G_TO_KG(126.059f);
+  props.CoM_RW = mmToMVector(Eigen::Matrix<float, 3, 1>(0.0f, 0.537f, 0.0f));
+  props.I_RW = gmm2ToKgm2Matrix((Eigen::Matrix<float, 3, 3>() << 177500.0f, 0.0f, 0.0f,
+                                 0.0f, 339000.0f, 0.0f,
+                                 0.0f, 0.0f, 177500.0f)
                                   .finished());
 
 

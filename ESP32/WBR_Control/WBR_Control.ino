@@ -39,7 +39,7 @@
 #include "Timer.h"
 
 
-// Properties와 Receiver, Controller 초기화
+// 初始化属性、接收器和控制器
 const Properties properties = createDefaultProperties();
 POL Pol(properties);
 HardwareSerial motor1Serial(1);
@@ -196,14 +196,14 @@ void printDiagnosticSnapshot(bool refresh_measurements) {
 //                                    SETUP
 // ==============================================================================
 void setup() {
-  // Serial 통신, Receiver, HR Controller 초기화
+  // 串行通信、接收器、HR控制器初始化
   Serial0.begin(115200);              // FTDI/UART0 command and status port
   if (USE_SBUS_RECEIVER) receiver.begin();
   if (!HR_controller.begin()) {
     Serial.println("[ERROR] Failed to initialize LU9685 I2C bus");
   }
 
-  // IMU (MPU6050) 초기화
+  // IMU（MPU6050）初始化
   if (!MPU6050.begin()) {
     Serial.println("[ERROR] Fail to initialize IMU.");
   }
@@ -211,33 +211,33 @@ void setup() {
   motor1Serial.begin(MOTOR_BAUDRATE, SERIAL_8N1, MOTOR1_RX_PIN, MOTOR1_TX_PIN);
   motor2Serial.begin(MOTOR_BAUDRATE, SERIAL_8N1, MOTOR2_RX_PIN, MOTOR2_TX_PIN);
 
-  // WIFI 연결
+  // WIFI连接
   if (USE_WIFI_LOGGER) WIFI_Logger.begin();
 
-  // PSRAM 상태 확인 및 초기화
+  // 检查PSRAM状态并初始化
   if (psramFound()) {
     Serial.println("PSRAM available.");
     if (!psramInit()) {
       Serial.println("PSRAM initialization failed!");
-      while (1) {}  // 초기화 실패 시 무한 루프
+      while (1) {}  // 初始化失败时无限循环
     } else {
       Serial.println("PSRAM initialized successfully!");
     }
-    Serial.printf("PSRAM size: %d bytes\n", ESP.getPsramSize());  // PSRAM 크기 출력
+    Serial.printf("PSRAM size: %d bytes\n", ESP.getPsramSize());  // PSRAM 大小输出
   } else {
     Serial.println("PSRAM not available.");
-    while (1) {}  // PSRAM 미탐지 시 무한 루프
+    while (1) {}  // 未检测到 PSRAM 时无限循环
   }
 
-  // SBUS 데이터 수신 대기 (타임아웃 처리)
+  //等待接收SBUS数据（超时处理）
   Timer receiver_timer(Timer::TimerType::Millis);
   receiver_timer.start();
-  const unsigned long timeout = 5000;  // 타임아웃 5초 설정
+  const unsigned long timeout = 5000;  // 将超时设置为 5 秒
 
   while (USE_SBUS_RECEIVER && !receiver.readData()) {
     if (receiver_timer.getDuration() > timeout) {
       Serial.println("Timeout: No data received from SBUS.");
-      receiver_timer.start();  // 타임아웃 초기화
+      receiver_timer.start();  // 重置超时
     }
   }
   if (USE_SBUS_RECEIVER) receiver.updateData();
@@ -246,7 +246,7 @@ void setup() {
 #if USE_WIFI_LOGGER
   WIFI_Logger.readyToLogValue("cal_time");
 
-  WIFI_Logger.readyToLogTimeStamp();  // 시간 기록
+  WIFI_Logger.readyToLogTimeStamp();  // 时间记录
   // Desired states
   WIFI_Logger.readyToLogValue("h_d"); 
   WIFI_Logger.readyToLogValue("theta_d");
@@ -255,30 +255,30 @@ void setup() {
   
   // Estimated states
   WIFI_Logger.readyToLogValue("theta_hat");
-  WIFI_Logger.readyToLogValue("theta_dot_hat");  // 시간 기록
-  WIFI_Logger.readyToLogValue("v_hat");          // 시간 기록
-  WIFI_Logger.readyToLogValue("psi_dot_hat");    // 시간 기록
+  WIFI_Logger.readyToLogValue("theta_dot_hat");  // 时间记录
+  WIFI_Logger.readyToLogValue("v_hat");          // 时间记录
+  WIFI_Logger.readyToLogValue("psi_dot_hat");    // 时间记录
 
   // Control inputs
-  WIFI_Logger.readyToLogValue("tau_RW");  // 시간 기록
-  WIFI_Logger.readyToLogValue("tau_LW");  // 시간 기록
+  WIFI_Logger.readyToLogValue("tau_RW");  // 时间记录
+  WIFI_Logger.readyToLogValue("tau_LW");  // 时间记录
 
   // Measurements
   WIFI_Logger.readyToLogValue("acc_x");
-  WIFI_Logger.readyToLogValue("acc_y");  // 시간 기록
-  WIFI_Logger.readyToLogValue("acc_z");  // 시간 기록
-  WIFI_Logger.readyToLogValue("gyr_x");  // 시간 기록
+  WIFI_Logger.readyToLogValue("acc_y");  // 时间记录
+  WIFI_Logger.readyToLogValue("acc_z");  // 时间记录
+  WIFI_Logger.readyToLogValue("gyr_x");  // 时间记录
   WIFI_Logger.readyToLogValue("gyr_y");
-  WIFI_Logger.readyToLogValue("gyr_z");         // 시간 기록
-  WIFI_Logger.readyToLogValue("theta_dot_RW");  // 시간 기록
-  WIFI_Logger.readyToLogValue("theta_dot_LW");  // 시간 기록
+  WIFI_Logger.readyToLogValue("gyr_z");         // 时间记录
+  WIFI_Logger.readyToLogValue("theta_dot_RW");  // 时间记录
+  WIFI_Logger.readyToLogValue("theta_dot_LW");  // 时间记录
 
   WIFI_Logger.readyToLogValue("current_RW");
   WIFI_Logger.readyToLogValue("current_LW");
 #endif
   // =======================================================================
 
-  // 시간 측정 시작
+  //开始测量时间
   log_timer.start();
   sampling_timer.start();
 }
@@ -294,14 +294,14 @@ void loop() {
     printDiagnosticSnapshot(!serial_run_enabled && !compute_only_enabled);
   }
 
-  // sampling time이 경과했을 때만 실행
+  // 仅当采样时间结束时执行
   if (sampling_timer.getDuration() >= dt * 1000) {
-    // 경과 시간 출력
+    // 经过时间输出
     Serial.print("SamplingTime(ms):");
     Serial.print(sampling_timer.getDuration());
     Serial.print(" ");
 
-    sampling_timer.start();  // sampling timer 초기화
+    sampling_timer.start();  // 初始化采样定时器
 
 
     if (USE_SBUS_RECEIVER && receiver.readData()) {
@@ -359,7 +359,7 @@ void loop() {
 
       //// calculate CoM and Inertia from CoM Calculator ////
       Pol.setHR(h_d, phi_d);
-      Pol.calculate_com_and_inertia();  // 여기서 inverse kinematics로 theta_hips도 계산됨
+      Pol.calculate_com_and_inertia();  // 这里theta_hips也是用逆运动学计算的。
       Pol.get_theta_eq(x_d(0));         // update desired pitch angle with equilibrium point
 
       //// compute VYB controller gain ////

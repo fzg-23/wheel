@@ -1,17 +1,17 @@
 function [H, h] = measurementPrediction(x_pred)
-% 비선형 측정 방정식 (예시)
-h = @(x_pred) [x_pred(1);  % 예시로 측정하는 값
-    x_pred(2);  % 예시로 측정하는 값
-    x_pred(3);  % 예시로 측정하는 값
-    x_pred(4);  % 예시로 측정하는 값
-    0;          % 측정값
-    0;          % 측정값
-    0;          % 측정값
-    0];         % 측정값
+% 非线性测量方程（示例）
+h = @(x_pred) [x_pred(1);  % 测量值作为示例
+    x_pred(2);  % 测量值作为示例
+    x_pred(3);  % 测量值作为示例
+    x_pred(4);  % 测量值作为示例
+    0;          % 测量
+    0;          % 测量
+    0;          % 测量
+    0];         % 测量
 
-% 측정 예측값
+% 测量预测值
 h = h(x_pred);
 
-% Jacobian 행렬 계산 (측정 방정식 선형화)
-H = jacobianMeasurement(x_pred); % 측정 방정식에 대한 Jacobian을 계산하는 함수
+% 雅可比矩阵计算（测量方程的线性化）
+H = jacobianMeasurement(x_pred); %计算测量方程的雅可比行列式的函数
 end

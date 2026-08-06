@@ -28,7 +28,7 @@ public:
       // R_cov((Eigen::Matrix<float, 8, 1>() << 1.54239e-1f, 1.93287e-1f, 2.63191e-1f, 3.11351e-3f, 4.12642e-3f, 5.37135e-3f, 1e-5f, 1e-5f).finished().asDiagonal()),  // sensor noise covariance
       // Q_cov((Eigen::Matrix<float, 4, 1>() << 4e-5f, 1e-4f, 4e-5f, 1e-4f).finished().asDiagonal())
   {
-    x.setZero();  // 상태 벡터 초기화
+    x.setZero();  // 状态向量初始化
     x_pred.setZero();
     z.setZero();
     h_obs.setZero();
@@ -43,7 +43,7 @@ public:
     Serial.println("P:");
     for (int i = 0; i < P.rows(); ++i) {
       for (int j = 0; j < P.cols(); ++j) {
-        Serial.print(P(i, j), 6);  // 소수점 6자리까지 출력
+        Serial.print(P(i, j), 6);  // 最多打印 6 位小数
         Serial.print(" ");
       }
       Serial.println();
@@ -53,7 +53,7 @@ public:
     Serial.println("P_pred:");
     for (int i = 0; i < P_pred.rows(); ++i) {
       for (int j = 0; j < P_pred.cols(); ++j) {
-        Serial.print(P_pred(i, j), 6);  // 소수점 6자리까지 출력
+        Serial.print(P_pred(i, j), 6);  // 最多打印 6 位小数
         Serial.print(" ");
       }
       Serial.println();
@@ -63,7 +63,7 @@ public:
     Serial.println("F:");
     for (int i = 0; i < F_mat.rows(); ++i) {
       for (int j = 0; j < F_mat.cols(); ++j) {
-        Serial.print(F_mat(i, j), 6);  // 소수점 6자리까지 출력
+        Serial.print(F_mat(i, j), 6);  // 最多打印 6 位小数
         Serial.print(" ");
       }
       Serial.println();
@@ -73,7 +73,7 @@ public:
     Serial.println("H:");
     for (int i = 0; i < H.rows(); ++i) {
       for (int j = 0; j < H.cols(); ++j) {
-        Serial.print(H(i, j), 6);  // 소수점 6자리까지 출력
+        Serial.print(H(i, j), 6);  // 最多打印 6 位小数
         Serial.print(" ");
       }
       Serial.println();
@@ -83,7 +83,7 @@ public:
     Serial.println("K:");
     for (int i = 0; i < K_mat.rows(); ++i) {
       for (int j = 0; j < K_mat.cols(); ++j) {
-        Serial.print(K_mat(i, j), 6);  // 소수점 6자리까지 출력
+        Serial.print(K_mat(i, j), 6);  // 最多打印 6 位小数
         Serial.print(" ");
       }
       Serial.println();
@@ -92,28 +92,28 @@ public:
     // x vector
     Serial.println("x:");
     for (int i = 0; i < x.rows(); ++i) {
-      Serial.print(x(i, 0), 6);  // 소수점 6자리까지 출력
+      Serial.print(x(i, 0), 6);  // 最多打印 6 位小数
       Serial.println();
     }
 
     // x_pred vector
     Serial.println("x_pred:");
     for (int i = 0; i < x_pred.rows(); ++i) {
-      Serial.print(x_pred(i, 0), 6);  // 소수점 6자리까지 출력
+      Serial.print(x_pred(i, 0), 6);  // 最多打印 6 位小数
       Serial.println();
     }
 
     // z vector
     Serial.println("z:");
     for (int i = 0; i < z.rows(); ++i) {
-      Serial.print(z(i, 0), 6);  // 소수점 6자리까지 출력
+      Serial.print(z(i, 0), 6);  // 最多打印 6 位小数
       Serial.println();
     }
 
     // h_obs vector
     Serial.println("h_obs:");
     for (int i = 0; i < h_obs.rows(); ++i) {
-      Serial.print(h_obs(i, 0), 6);  // 소수점 6자리까지 출력
+      Serial.print(h_obs(i, 0), 6);  // 最多打印 6 位小数
       Serial.println();
     }
   }
@@ -150,22 +150,22 @@ public:
     if (!Pol_ref.prepare_state_prediction()) {
       return false;
     }  // update M, nle, dM_dtheta, dnle_dtheta, dnle_dqdot
-    // 예측 단계 수행
-    Pol_ref.predict_state(x_pred, F_mat);                        // 상태 예측
-    P_pred = F_mat * P * F_mat.transpose() + Q_cov.toDenseMatrix();  // 공분산 업데이트
+    // 执行预测步骤
+    Pol_ref.predict_state(x_pred, F_mat);                        // 状态预测
+    P_pred = F_mat * P * F_mat.transpose() + Q_cov.toDenseMatrix();  // 协方差更新
     return true;
   }
 
   void update() {
-    predict_measurement();                                                                        // h_obs 및 H 업데이트
-    K_mat = P_pred * H.transpose() * (H * P_pred * H.transpose() + R_cov.toDenseMatrix()).inverse();  // 칼만 이득 계산
-    x = x_pred + K_mat * (z - h_obs);                                                                 // 상태 업데이트
-    P = (Eigen::Matrix<float, 4, 4>::Identity() - K_mat * H) * P_pred;                                // 오차 공분산 업데이트
+    predict_measurement();                                                                        // 更新 h_obs 和 H
+    K_mat = P_pred * H.transpose() * (H * P_pred * H.transpose() + R_cov.toDenseMatrix()).inverse();  // 卡尔曼增益计算
+    x = x_pred + K_mat * (z - h_obs);                                                                 // 状态更新
+    P = (Eigen::Matrix<float, 4, 4>::Identity() - K_mat * H) * P_pred;                                // 误差协方差更新
   }
 
 
 private:
-  // 관측 모델 함수
+  // 观测模型函数
   void predict_measurement() {
     // float theta_ddot = Pol_ref.f(1);
     // float v_dot = Pol_ref.f(2);
@@ -192,7 +192,7 @@ private:
 
 
 
-    // h_obs 계산
+    // h_obs计算
     h_obs(0) = h * theta_ddot + v_dot * cos_theta - g * sin_theta - h * std::pow(psi_dot, 2) * sin_cos_theta;
     h_obs(1) = psi_dot * v + h * psi_ddot * sin_theta + h * psi_dot * theta_dot * cos_theta * 2.0;
     h_obs(2) = -h * std::pow(theta_dot, 2) + g * cos_theta + v_dot * sin_theta - std::pow(psi_dot, 2) * (h - h * cos_theta_2);
@@ -202,7 +202,7 @@ private:
     h_obs(6) = theta_dot - v / R - (L * psi_dot) / R;
     h_obs(7) = -theta_dot + v / R - (L * psi_dot) / R;
 
-    // H 행렬 계산
+    // H矩阵计算
     H(0, 0) = std::pow(psi_dot, 2) * (h * sin_theta_2 - h * cos_theta_2) - g * cos_theta - v_dot * sin_theta;
     H(1, 0) = h * psi_ddot * cos_theta - h * psi_dot * theta_dot * sin_theta * 2.0;
     H(2, 0) = v_dot * cos_theta - g * sin_theta - h * std::pow(psi_dot, 2) * sin_cos_theta * 2.0;

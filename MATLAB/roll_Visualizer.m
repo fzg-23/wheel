@@ -59,14 +59,14 @@ rho = 15;
 h = 130;
 theta_dot_LW = -1;
 theta_dot_RW = 1;
-% phi_range = linspace(-pi/12, pi/12, 10); % phi의 범위를 10개 구간으로 나눔
-phi_range = linspace(pi/4, pi/4, 10); % phi의 범위를 10개 구간으로 나눔
+% phi_range = linspace(-pi/12, pi/12, 10);将 %phi 的范围分为 10 部分
+phi_range = linspace(pi/4, pi/4, 10); % 将 phi 的范围分为 10 部分
 
-% theta = linspace(-pi/2, pi/2, 50); % theta의 범위
-theta = linspace(-pi/2, pi/2, 50); % theta의 범위
+% θ = linspace(-pi/2, pi/2, 50); %theta 范围
+theta = linspace(-pi/2, pi/2, 50); % θ 范围
 
 
-% 축 범위
+% 轴范围
 x_lim = [-200, 200];
 y_lim = [-300, 300];
 z_lim = [-300, 300];
@@ -80,12 +80,12 @@ RW_center = [0; -L; -hR];
 W_center = [0; 0; -h];
 
 
-% 초기 플롯
+% 初始情节
 figure;
-ax1 = subplot(1, 2, 1); % 기존 뷰
-ax2 = subplot(1, 2, 2); % c-frame 뷰
+ax1 = subplot(1, 2, 1); % 现有视图
+ax2 = subplot(1, 2, 2); % C 型框架视图
 
-% 기존 뷰 플롯 설정
+% 设置现有视图图
 LW_line = plot3(ax1, NaN, NaN, NaN, 'r-', 'LineWidth', 3); hold(ax1, "on");
 RW_line = plot3(ax1, NaN, NaN, NaN, 'r-', 'LineWidth', 3);
 body_line = plot3(ax1, NaN, NaN, NaN, 'k-', 'LineWidth', 4);
@@ -101,13 +101,13 @@ v_dLW = quiver3(ax1, NaN, NaN, NaN, NaN, NaN, NaN, 'b', 'LineWidth', 4);
 v_dRW = quiver3(ax1, NaN, NaN, NaN, NaN, NaN, NaN, 'b', 'LineWidth', 4);
 
 
-% x, y, z 축 강조를 위한 벡터 그리기
-quiver3(ax1, 0, 0, 0, x_lim(2), 0, 0, 0, 'r', 'LineWidth', 2); % x축 강조 (빨간색)
-quiver3(ax1, 0, 0, 0, 0, y_lim(2), 0, 0, 'g', 'LineWidth', 2); % y축 강조 (초록색)
-quiver3(ax1, 0, 0, 0, 0, 0, z_lim(2), 0, 'b', 'LineWidth', 2); % z축 강조 (파란색)
+% 绘制向量以突出显示 x、y 和 z 轴
+quiver3(ax1, 0, 0, 0, x_lim(2), 0, 0, 0, 'r', 'LineWidth', 2); % 突出显示 x 轴（红色）
+quiver3(ax1, 0, 0, 0, 0, y_lim(2), 0, 0, 'g', 'LineWidth', 2); % 突出显示 y 轴（绿色）
+quiver3(ax1, 0, 0, 0, 0, 0, z_lim(2), 0, 'b', 'LineWidth', 2); %z 轴突出显示（蓝色）
 
 
-% 축 설정 (기존 뷰)
+% 轴设置（旧视图）
 axis(ax1, 'vis3d');
 grid(ax1, 'on');
 xlabel(ax1, 'X'); ylabel(ax1, 'Y'); zlabel(ax1, 'Z');
@@ -116,7 +116,7 @@ axis(ax1, 'equal'); % Add this line
 view(ax1, [1,1,1]);
 xlim(ax1, x_lim); ylim(ax1, y_lim); zlim(ax1, z_lim);
 
-% c-frame 뷰 플롯 설정
+% c 框架视图绘图设置
 LW_line_c = plot3(ax2, NaN, NaN, NaN, 'r-', 'LineWidth', 3); hold(ax2, "on");
 RW_line_c = plot3(ax2, NaN, NaN, NaN, 'r-', 'LineWidth', 3);
 body_line_c = plot3(ax2, NaN, NaN, NaN, 'k-', 'LineWidth', 4);
@@ -134,14 +134,14 @@ v_dLW_c = quiver3(ax2, NaN, NaN, NaN, NaN, NaN, NaN, 'b', 'LineWidth', 4);
 v_dRW_c = quiver3(ax2, NaN, NaN, NaN, NaN, NaN, NaN, 'b', 'LineWidth', 4);
 
 
-% x, y, z 축 강조 (굵은 선으로 표시)
-% x, y, z 축 강조를 위한 벡터 그리기
-quiver3(ax2, 0, 0, 0, x_lim(2), 0, 0, 0, 'r', 'LineWidth', 2); % x축 강조 (빨간색)
-quiver3(ax2, 0, 0, 0, 0, y_lim(2), 0, 0, 'g', 'LineWidth', 2); % y축 강조 (초록색)
-quiver3(ax2, 0, 0, 0, 0, 0, z_lim(2)+h, 0, 'b', 'LineWidth', 2); % z축 강조 (파란색) -> z축 h만큼 이동
+% 突出显示 x、y、z 轴（显示为粗线）
+% 绘制向量以突出显示 x、y 和 z 轴
+quiver3(ax2, 0, 0, 0, x_lim(2), 0, 0, 0, 'r', 'LineWidth', 2); % 突出显示 x 轴（红色）
+quiver3(ax2, 0, 0, 0, 0, y_lim(2), 0, 0, 'g', 'LineWidth', 2); % 突出显示 y 轴（绿色）
+quiver3(ax2, 0, 0, 0, 0, 0, z_lim(2)+h, 0, 'b', 'LineWidth', 2); % 突出显示 z 轴（蓝色）-> 将 z 轴移动至 h
 
 
-% 축 설정 (c-frame 뷰)
+% 轴设置（C 框架视图）
 axis(ax2, 'vis3d');
 grid(ax2, 'on');
 xlabel(ax2, 'X'); ylabel(ax2, 'Y'); zlabel(ax2, 'Z');
@@ -150,10 +150,10 @@ axis(ax2, 'equal'); % Add this line
 view(ax2, [1,1,1]);
 xlim(ax2, x_lim); ylim(ax2, y_lim); zlim(ax2, z_lim + h);
 
-% 무한히 반복하도록 설정
+% 设置为无限重复
 while true
     for i = 1:length(phi_range)
-        % 기존 뷰 계산
+        %计算现有视图
         hL = h + L * tan(phi_range(i));
         hR = h - L * tan(phi_range(i));
         LW_center = [0; L; -hL];
@@ -192,17 +192,17 @@ while true
             'YData', W_center(2), ...
             'ZData', W_center(3));
 
-        % c-frame 계산
-        % theta의 각도 수와 총 시간을 계산
-        theta_steps = length(theta); % theta의 분할 개수
-        total_time = 5; % 루프가 1초 걸리게 설정
-        time_per_step = total_time / theta_steps; % 각 단계의 목표 시간
+        % c-框架计算
+        % 计算 θ 度数和总时间
+        theta_steps = length(theta); % θ 的划分数
+        total_time = 5; % 设置循环时间为 1 秒
+        time_per_step = total_time / theta_steps; % 各阶段目标时间
 
-        % body_center_trajectory 초기화
-        c_body_center_trajectory = NaN(3, theta_steps); % theta에 대한 body_center 경로
+        % 初始化body_center_trajectory
+        c_body_center_trajectory = NaN(3, theta_steps); % body_center 到 theta 的路径
 
         for j = 1:theta_steps
-            tic; % 현재 시간을 측정
+            tic; % 测量当前时间
 
             p_B_dLW = LW_trajectory(:,j);
             p_B_dRW = RW_trajectory(:,j);
@@ -253,7 +253,7 @@ while true
 
 
 
-            % 저장된 c_body_center 위치를 c-body_center_trajectory에 기록
+            % 将保存的c_body_center位置写入c-body_center_trajectory
             c_body_center_trajectory(:, j) = c_body_center;
 
             c_wheel_axis = angleAxisToRotationMatrix(theta(j), [0;1;0])...
@@ -328,10 +328,10 @@ while true
 
             drawnow limitrate;
 
-            % 남은 시간을 계산하여 pause 실행
-            elapsed_time = toc; % 루프 실행 시간 측정
-            remaining_time = max(0, time_per_step - elapsed_time); % 남은 시간 계산
-            pause(remaining_time); % 지연 시간 적용
+            % 通过计算剩余时间执行暂停
+            elapsed_time = toc; % 测量循环执行时间
+            remaining_time = max(0, time_per_step - elapsed_time); % 计算剩余时间
+            pause(remaining_time); % 应用延迟时间
         end
 
     end
@@ -376,57 +376,57 @@ R = [c + x^2 * one_c, x * y * one_c - z * s, x * z * one_c + y * s;
 end
 
 function surf_obj = draw_wheel(ax, center, axis, R, r, num_points, face_alpha)
-% ax: axes 객체
-% center: [x, y, z] 형태의 중심점
-% axis: [vx, vy, vz] 형태의 축 벡터
-% R: 큰 반지름
-% r: 작은 반지름
-% num_points: 각도를 나눌 샘플링 수 (해상도)
-% face_alpha: 투명도 (0 ~ 1)
+% ax: 轴对象
+% center：[x, y, z] 形式的中心点
+% axis：轴向量，形式为 [vx, vy, vz]
+% R：大半径
+% r：小半径
+% num_points：角度除以（分辨率）的样本数
+% face_alpha: 透明度 (0 ~ 1)
 
-% 기본 각도 생성
-theta = linspace(0, 2*pi, num_points); % 큰 원의 각도
-phi = linspace(0, 2*pi, num_points);   % 작은 원의 각도
+% 创建基本角度
+theta = linspace(0, 2*pi, num_points); % 大圆的角度
+phi = linspace(0, 2*pi, num_points);   % 小圆的角度
 [Theta, Phi] = meshgrid(theta, phi);
 
-% 기본 토러스 좌표 (정렬되지 않은 상태)
+% 基本环面坐标（未对齐）
 Xc = (R + r * cos(Phi)) .* cos(Theta);
 Yc = (R + r * cos(Phi)) .* sin(Theta);
 Zc = r * sin(Phi);
 
-% 축 벡터를 정규화
+% 标准化轴向量
 axis = axis / norm(axis);
 
-% 축 벡터의 방향을 기준으로 회전 행렬 계산
-% 기본 축은 [0, 0, 1]이라고 가정
+% 根据轴向量的方向计算旋转矩阵
+% 假设主轴为 [0, 0, 1]
 z_axis = [0, 0, 1];
-if ~all(axis == z_axis) % 축이 기본 축과 다를 경우만 회전 수행
-    v = cross(z_axis, axis); % 축 사이의 외적
-    s = norm(v);             % 외적의 크기
-    c = dot(z_axis, axis);   % 두 벡터의 내적
+if ~all(axis == z_axis) % 仅当轴与主轴不同时才执行旋转
+    v = cross(z_axis, axis); % 轴之间的叉积
+    s = norm(v);             %叉积的大小
+    c = dot(z_axis, axis);   % 两个向量的点积
 
-    % 회전 행렬 생성 (Rodrigues' rotation formula)
+    % 创建旋转矩阵（罗德里格斯旋转公式）
     Vx = [0, -v(3), v(2); v(3), 0, -v(1); -v(2), v(1), 0];
     R_matrix = eye(3) + Vx + Vx^2 * ((1 - c) / s^2);
 else
-    R_matrix = eye(3); % 축이 동일하면 회전 필요 없음
+    R_matrix = eye(3); % 如果轴相同则无需旋转
 end
 
-% 회전 행렬 적용
+% 应用旋转矩阵
 coords = R_matrix * [Xc(:)'; Yc(:)'; Zc(:)'];
 X_rot = reshape(coords(1, :), size(Xc));
 Y_rot = reshape(coords(2, :), size(Yc));
 Z_rot = reshape(coords(3, :), size(Zc));
 
-% 중심점 이동
+% 移动中心点
 X = X_rot + center(1);
 Y = Y_rot + center(2);
 Z = Z_rot + center(3);
 
-% 토러스 그리기
-surf_obj = surf(ax, X, Y, Z, 'FaceColor', 'blue', 'EdgeColor', 'none', 'FaceAlpha', face_alpha); % 투명한 표면
+% 如何绘制圆环
+surf_obj = surf(ax, X, Y, Z, 'FaceColor', 'blue', 'EdgeColor', 'none', 'FaceAlpha', face_alpha); % 透明面
 
-% 조명 추가
+% 添加灯光
 light('Position', [1, 1, 1], 'Style', 'infinite', 'Parent', ax);
 end
 

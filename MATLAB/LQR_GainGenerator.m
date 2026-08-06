@@ -5,13 +5,13 @@ load('dynamic_properties.mat');
 load('dynamics_functions.mat');
 
 phi = 0;
-% 상태 가중치(Q)와 입력 가중치(R) 정의
-% Q_ = diag([50 10  10 5]);  % 상태 가중치
-% R_ = diag([150 150]);     % 입력 가중치
-Q_ = diag([100 0 20 5]);  % 상태 가중치
-R_ = diag([150 150]);     % 입력 가중치
+% 定义状态权重 (Q) 和输入权重 (R)
+% Q_ = diag([50 10 10 5]);  % 状态权重
+% R_=diag([150 150]);     % 输入重量
+Q_ = diag([100 0 20 5]);  % 状态权重
+R_ = diag([150 150]);     % 输入权重
 
-% 샘플링 시간 (T)
+% 采样时间（T）
 Ts = 0.008;
 
 Ks = [];
@@ -39,21 +39,21 @@ for h = 0.07:0.01:0.2
 
     B_ = calculate_fu(M, B);
 
-    % 이산 시스템 변환
-    sys_c = ss(A_, B_, [], []);        % 연속 시스템 생성 (C, D 없음)
-    sys_d = c2d(sys_c, Ts, 'zoh');    % ZOH 방식으로 이산화
-    Ad = sys_d.A;                    % 이산화된 A 행렬
-    Bd = sys_d.B;                    % 이산화된 B 행렬
+    % 离散系统转换
+    sys_c = ss(A_, B_, [], []);        % 创建连续系统（无 C、D）
+    sys_d = c2d(sys_c, Ts, 'zoh');    % 使用 ZOH 方法进行离散化
+    Ad = sys_d.A;                    % 离散 A 矩阵
+    Bd = sys_d.B;                    % 离散 B 矩阵
 
-    % LQR Gain 계산
+    % LQR增益计算
     K_d = dlqr(Ad, Bd, Q_, R_);
     Ks = [Ks; K_d];
 end
 
-% 데이터의 크기 확인 (행렬의 행과 열)
+% 检查数据的大小（矩阵的行和列）
 [numRows, numCols] = size(Ks);
 
-% C++ 코드 형식으로 출력
+% 以 C++ 代码格式输出
 for i = 1:numRows/2
     fprintf("mat << ");
     fprintf('   % .8ff,  % .8ff,  % .8ff,  % .8ff,\n', Ks(2*i-1,1), Ks(2*i-1,2), Ks(2*i-1,3), Ks(2*i-1,4));

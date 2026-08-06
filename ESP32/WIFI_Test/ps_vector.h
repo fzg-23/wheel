@@ -32,11 +32,11 @@ private:
   }
 
 public:
-  // 기본 생성자
+  // 默认构造函数
   ps_vector()
     : data_(nullptr), size_(0), capacity_(0) {}
 
-  // 복사 생성자
+  // 复制构造函数
   ps_vector(const ps_vector& other)
     : data_(nullptr), size_(0), capacity_(0) {
     for (size_t i = 0; i < other.size_; ++i) {
@@ -44,7 +44,7 @@ public:
     }
   }
 
-  // 이동 생성자
+  // 移动构造函数
   ps_vector(ps_vector&& other) noexcept
     : data_(other.data_), size_(other.size_), capacity_(other.capacity_) {
     other.data_ = nullptr;
@@ -52,7 +52,7 @@ public:
     other.capacity_ = 0;
   }
 
-  // 복사 대입 연산자
+  // 复制赋值运算符
   ps_vector& operator=(const ps_vector& other) {
     if (this == &other) return *this;
     clear();
@@ -62,7 +62,7 @@ public:
     return *this;
   }
 
-  // 이동 대입 연산자
+  //移动赋值运算符
   ps_vector& operator=(ps_vector&& other) noexcept {
     if (this == &other) return *this;
     clear();
@@ -75,7 +75,7 @@ public:
     return *this;
   }
 
-  // 소멸자
+  // 析构函数
   ~ps_vector() {
     clear();
     if (data_) {
@@ -83,7 +83,7 @@ public:
     }
   }
 
-  // 요소 추가
+  // 添加元素
   void push_back(const T& value) {
     if (size_ == capacity_) {
       size_t new_capacity = capacity_ == 0 ? 1 : capacity_ * 2;
@@ -102,14 +102,14 @@ public:
     ++size_;
   }
 
-  // 요소 제거
+  // 删除元素
   void pop_back() {
     if (size_ == 0)
       throw std::underflow_error("Vector is empty.");
     data_[--size_].~T();
   }
 
-  // 요소 삽입
+  // 插入元素
   void insert(size_t index, const T& value) {
     if (index > size_)
       throw std::out_of_range("Index out of range.");
@@ -117,7 +117,7 @@ public:
       size_t new_capacity = capacity_ == 0 ? 1 : capacity_ * 2;
       resize(new_capacity);
     }
-    // 뒤로 밀기
+    // 推回
     for (size_t i = size_; i > index; --i) {
       data_[i] = data_[i - 1];
     }
@@ -125,7 +125,7 @@ public:
     ++size_;
   }
 
-  // 요소 삭제
+  // 删除元素
   void erase(size_t index) {
     if (index >= size_)
       throw std::out_of_range("Index out of range.");
@@ -135,7 +135,7 @@ public:
     --size_;
   }
 
-  // 인덱스 연산자
+  // 索引运算符
   T& operator[](size_t index) {
     if (index >= size_)
       throw std::out_of_range("Index out of range.");
@@ -148,7 +148,7 @@ public:
     return data_[index];
   }
 
-  // 범위 안전 인덱스 접근
+  // 范围安全索引访问
   T& at(size_t index) {
     if (index >= size_)
       throw std::out_of_range("Index out of range.");
@@ -161,7 +161,7 @@ public:
     return data_[index];
   }
 
-  // 첫 번째 요소
+  // 第一个元素
   T& front() {
     if (size_ == 0)
       throw std::out_of_range("Vector is empty.");
@@ -174,7 +174,7 @@ public:
     return data_[0];
   }
 
-  // 마지막 요소
+  // 最后一个元素
   T& back() {
     if (size_ == 0)
       throw std::out_of_range("Vector is empty.");
@@ -187,7 +187,7 @@ public:
     return data_[size_ - 1];
   }
 
-  // 데이터 포인터
+  // 数据指针
   T* data() {
     return data_;
   }
@@ -196,44 +196,44 @@ public:
     return data_;
   }
 
-  // 크기
+  // 尺寸
   size_t size() const {
     return size_;
   }
 
-  // 용량
+  // 容量
   size_t capacity() const {
     return capacity_;
   }
 
-  // 벡터 비어있음 확인
+  // 检查向量是否为空
   bool empty() const {
     return size_ == 0;
   }
 
-  // 용량 예약
+  // 容量预留
   void reserve(size_t new_cap) {
     if (new_cap > capacity_) {
       resize(new_cap);
     }
   }
 
-  // 용량 축소
+  // 产能减少
   void shrink_to_fit() {
     resize(size_);
   }
 
   void clear() {
-    // 기본 타입 (trivially destructible)일 경우 소멸자 호출을 생략
+    // 如果它是原始类型（可简单破坏），则省略析构函数调用。
     if constexpr (!std::is_trivially_destructible<T>::value) {
       for (size_t i = 0; i < size_; ++i) {
-        data_[i].~T();  // 소멸자가 필요한 경우에만 호출
+        data_[i].~T();  // 仅在需要析构函数时调用
       }
     }
     size_ = 0;
   }
 
-  // 반복자 (범위 기반 for문을 사용하기 위한)
+  // 迭代器（用于使用基于范围的 for 语句）
   T* begin() {
     return data_;
   }

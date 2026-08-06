@@ -151,7 +151,7 @@ public:
   }
 
   bool prepare_state_prediction() {
-    prepare_calculate();  // 계산 효율성을 위해 반복되는 계산값을 미리 계산
+    prepare_calculate();  // 预先计算重复计算值以提高计算效率
     calculate_M();
 
     // print_all_variables();
@@ -386,7 +386,7 @@ void POL::solve_forward_kinematics() {
   theta_ks(0) = atan2f(ny0, nx0);
   theta_ks(1) = atan2f(ny1, nx1);
 
-  // 앞에는 다 상수라서 constructor에서 initialize
+  // 前面的都是常量，所以在构造函数中初始化它
   p_vecs.col(5) << -a - l2 * cB0, -0.102f, b + l2 * sB0;
   p_vecs.col(6) << -a - l2 * cB1, 0.102f, b + l2 * sB1;
 
@@ -403,11 +403,11 @@ void POL::solve_inverse_kinematics() {
   // degree to rad
   phi = phi * M_PI / 180;
 
-  // h_saturation 설정
+  // h_饱和度设置
   float phi_max = std::min(atanf((h - HEIGHT_MIN) / L), atanf((HEIGHT_MAX - h) / L));
   float phi_min = -phi_max;
 
-  phi = constrain(phi, phi_min, phi_max);  // phi값을 제한
+  phi = constrain(phi, phi_min, phi_max);  // 限制 phi 值
 
   float hR = h - L * tanf(phi);
   float hL = h + L * tanf(phi);
@@ -417,7 +417,7 @@ void POL::solve_inverse_kinematics() {
   for (int i = 0; i < 2; i++) {
     float h_val = hs[i];
 
-    // 각도 계산
+    //角度计算
 
     float angle_ADE = acos((pow(l1, 2) + pow(l4, 2) + pow(l5, 2) - pow(h_val, 2)) / (2 * l1 * sqrt(pow(l4, 2) + pow(l5, 2))));
     float angle_ADC = M_PI - (angle_ADE + angle_EDF);
@@ -433,7 +433,7 @@ void POL::solve_inverse_kinematics() {
     theta_hips[i] = (5 * M_PI / 6) - angle_ABC;
   }
 
-  theta_hips[1] = -theta_hips[1];  // BL 각도 반전
+  theta_hips[1] = -theta_hips[1];  // BL角反转
 }
 
 void POL::calculate_com_and_inertia() {
@@ -471,7 +471,7 @@ void POL::calculate_com_and_inertia() {
 
 void POL::print_all_variables() {
 
-  // 상태 변수 출력
+  // 状态变量输出
   Serial.println("State Variables:");
   Serial.print("theta: ");
   Serial.println(theta, 5);
@@ -482,7 +482,7 @@ void POL::print_all_variables() {
   Serial.print("psi_dot: ");
   Serial.println(psi_dot, 5);
 
-  // Helper 변수 출력
+  // 辅助变量输出
   Serial.println("\nHelper Variables:");
   Serial.print("cos_theta: ");
   Serial.println(cos_theta, 5);
@@ -501,7 +501,7 @@ void POL::print_all_variables() {
   Serial.print("psi_dot_2: ");
   Serial.println(psi_dot_2, 5);
 
-  // Inertia Tensor 출력
+  // 惯性张量输出
   Serial.println("\nInertia Tensors:");
   Serial.print("I_B_LW:\n");
   for (int i = 0; i < 3; i++) {
@@ -530,7 +530,7 @@ void POL::print_all_variables() {
     Serial.println();
   }
 
-  // CoM offset 출력
+  // CoM 偏移输出
   Serial.print("p_bcom: ");
   for (int i = 0; i < 3; i++) {
     Serial.print(p_bcom(i), 5);
@@ -538,7 +538,7 @@ void POL::print_all_variables() {
   }
   Serial.println();
 
-  // Kinematic properties 출력
+  // 运动学属性输出
   Serial.println("\nKinematic Properties:");
   Serial.print("a: ");
   Serial.println(a, 5);
@@ -569,7 +569,7 @@ void POL::print_all_variables() {
   Serial.print("AB: ");
   Serial.println(AB, 5);
 
-  // For CoM calculator 출력
+  // 对于 CoM 计算器输出
   Serial.println("\nFor CoM Calculator:");
   Serial.print("theta_As: ");
   for (int i = 0; i < 2; i++) {
@@ -590,7 +590,7 @@ void POL::print_all_variables() {
   }
   Serial.println();
 
-  // p_vecs, c_vecs, m_vecs 출력
+  //p_vecs、c_vecs、m_vecs 输出
   Serial.print("p_vecs:\n");
   for (int i = 0; i < 3; i++) {
     for (int j = 0; j < 7; j++) {
@@ -616,7 +616,7 @@ void POL::print_all_variables() {
   }
   Serial.println();
 
-  // Inertia and Gradient Matrices 출력
+  // 惯性和梯度矩阵输出
   Serial.println("\nInertia and Gradient Matrices:");
   Serial.print("R_matrices: ");
   for (size_t i = 0; i < R_matrices.size(); i++) {
@@ -646,11 +646,11 @@ void POL::print_all_variables() {
     }
   }
 
-  // CoM 계산 및 기타 출력
+  // CoM 计算和其他输出
   Serial.print("theta_eq: ");
   Serial.println(theta_eq, 5);
 
-  // Dynamic properties and Gradient 출력
+  // 动态属性和梯度输出
   Serial.println("\nDynamic Properties and Gradient:");
   Serial.print("M:\n");
   for (int i = 0; i < 3; i++) {
@@ -711,7 +711,7 @@ void POL::print_all_variables() {
     Serial.println();
   }
 
-  // fx, fu 출력
+  // fx、fu 输出
   Serial.print("fx:\n");
   for (int i = 0; i < 4; i++) {
     for (int j = 0; j < 4; j++) {
@@ -730,7 +730,7 @@ void POL::print_all_variables() {
     Serial.println();
   }
 
-  // u, x 출력
+  // u、x 输出
   Serial.print("u: ");
   for (int i = 0; i < 2; i++) {
     Serial.print(u(i));
@@ -745,7 +745,7 @@ void POL::print_all_variables() {
   }
   Serial.println();
 
-  // 물리적 특성 출력
+  // 物性输出
   Serial.println("\nPhysical Properties:");
   Serial.print("h: ");
   Serial.println(h);
